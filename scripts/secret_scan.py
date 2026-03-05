@@ -193,6 +193,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(_format_report(findings), file=sys.stderr)
         return 1
 
+    print(f"Secret scan ({args.scope}) completed successfully. No secrets found.", file=sys.stderr)
     return 0
 
 
