@@ -47,6 +47,14 @@ render-test: install ## Render fixture repos and run their checks
 .PHONY: check
 check: fmt lint type test render-test ## Run all template-engine checks
 
+.PHONY: secret-scan
+secret-scan: ## Scan tracked repository files for leaked Gemini API keys
+	@uv run python scripts/secret_scan.py --scope repo
+
+.PHONY: secret-scan-staged
+secret-scan-staged: ## Scan staged added lines for leaked Gemini API keys
+	@uv run python scripts/secret_scan.py --scope staged-added
+
 .PHONY: install-git-hooks
 install-git-hooks: ## Configure git to use repo-managed hooks
 	git config core.hooksPath .githooks
