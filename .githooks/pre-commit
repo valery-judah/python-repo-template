@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -eu
+
+if ! command -v uv >/dev/null 2>&1; then
+  echo "pre-commit secret scan requires 'uv' on PATH" >&2
+  exit 1
+fi
+
+uv run python -m docforge.devtools.secret_scan --scope staged-added
