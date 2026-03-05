@@ -41,12 +41,12 @@ When instructions conflict, apply this order:
 ## 3) Command Policy
 Use these command patterns:
 - Dependency sync: `make sync` (fallback: `uv sync`)
-- Prepare engine env: `make install`
+- Editable install: `make install` (fallback: `uv pip install --editable .`)
+- Run app: `make run`
 - Format: `make fmt`
 - Lint: `make lint`
 - Type check: `make type`
 - Tests: `make test`
-- Render validation: `make render-test`
 
 ## 4) Task Matrix
 - Docs-only change:
@@ -56,7 +56,6 @@ Use these command patterns:
   - required: `make test`
 - API/schema/logic change:
   - required: `make fmt`, `make lint`, `make type`, `make test`
-  - recommended: `make render-test` when template output or render behavior changes
   - also update related docs and tests
 
 ## 5) Semantic RAG Contract Discipline

@@ -16,54 +16,37 @@ help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
 .PHONY: sync
-sync: ensure-uv ## Sync dependencies using uv
+sync: ensure-uv ## Sync template-engine dependencies
 	uv sync
-
-.PHONY: init
-init: sync install ## Bootstrap local dev environment
 
 .PHONY: install
-install: sync ## Install the package in editable mode
-	uv pip install --editable .
-
-.PHONY: add-rich
-add-rich: ensure-uv ## Add `rich` dependency via uv (updates pyproject + uv.lock)
-	uv add rich
-	uv sync
+install: sync ## Prepare the local template-engine environment
 
 .PHONY: fmt
-fmt: ensure-uv ## Format and auto-fix lint issues
+fmt: ensure-uv ## Format and auto-fix the template-engine code
 	uv run ruff format .
 	uv run ruff check . --fix
 
 .PHONY: lint
-lint: ensure-uv ## Run lint checks
+lint: ensure-uv ## Run lint checks for the template-engine code
 	uv run ruff format . --check
 	uv run ruff check .
 
 .PHONY: type
-type: ensure-uv ## Run static type checks
-	uv run mypy src
+type: ensure-uv ## Run static type checks for template-engine code
+	uv run mypy copier_extensions.py scripts tests
 
 .PHONY: test
-test: install ## Run unit tests
+test: install ## Run template-engine unit tests
 	uv run pytest tests
 
+.PHONY: render-test
+render-test: install ## Render fixture repos and run their checks
+	uv run python scripts/render_validate.py
+
 .PHONY: check
-check: fmt lint type test ## Run all checks
-
-.PHONY: secret-scan
-secret-scan: ## Scan tracked repository files for leaked Gemini API keys
-	uv run python -m template.devtools.secret_scan --scope repo
-
-.PHONY: secret-scan-staged
-secret-scan-staged: ## Scan staged added lines for leaked Gemini API keys
-	uv run python -m template.devtools.secret_scan --scope staged-added
+check: fmt lint type test render-test ## Run all template-engine checks
 
 .PHONY: install-git-hooks
 install-git-hooks: ## Configure git to use repo-managed hooks
 	git config core.hooksPath .githooks
-
-.PHONY: run
-run: install ## Run template demo CLI
-	uv run python -m template.cli

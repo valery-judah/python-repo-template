@@ -3,38 +3,40 @@ requires = ["hatchling>=1.27.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "python-repo-template-engine"
+name = "{{ repo_slug }}"
 version = "0.1.0"
-description = "Template engine and validation tooling for the python repo scaffold."
+description = "There should be description of your project."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">={{ python_version }}"
 dependencies = [
-  "copier>=9,<10",
+  "pydantic>=2,<3",
 ]
 
 [dependency-groups]
 dev = [
-  "mypy>=1.17.0",
+  "mypy>=1.17.0,<1.19.0",
   "pytest>=8.4.0",
   "ruff>=0.12.0",
 ]
 
-[tool.uv]
-package = false
+[project.scripts]
+"{{ package_name }}" = "{{ package_name }}.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/{{ package_name }}"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py{{ python_version | replace('.', '') }}"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "{{ python_version }}"
 strict = true
 warn_unreachable = true
 warn_unused_ignores = true
-files = ["copier_extensions.py", "scripts", "tests"]
 
 [tool.pytest.ini_options]
 addopts = "-q"

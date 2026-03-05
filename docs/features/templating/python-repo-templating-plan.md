@@ -1,259 +1,190 @@
-# Python Repo Templating Plan (one-shot scaffolding)
+# Python Repo Templating Plan
+
+## Summary
+- Turn `python-repo-template` itself into the Copier template source.
+- Keep the template engine at the repo root and the generated starter payload under `template/`.
+- Keep v1 as a single base Python starter template, not a multi-kind `service` / `library` / `cli` system.
+- Preserve the current repository contract where practical: `uv`, `Makefile`-driven workflows, `src/` layout, editable installs, tests against installed-package behavior, and the repo-managed secret scan.
+- Make the plan implementation-ready for templating this repo's concrete package/module names and documentation into generated repositories.
+
+---
+
+## Current repo baseline
+
+This repository now has a split layout:
+- root-level template engine files such as `copier.yml`, `copier_extensions.py`, `scripts/`, and the engine `Makefile`
+- generated starter payload under `template/`
+- payload package source under `template/src/{{ package_name }}/`
+- payload project metadata in `template/pyproject.toml.jinja`
+- payload docs and policy files under `template/`
+- a payload-local secret scanning tool rendered under `<package_name>.devtools.secret_scan`
+
+The plan should treat the `template/` directory as the generated repository contents and the repo root as engine and validation infrastructure.
+
+---
 
 ## Goals and constraints
-- **One-shot scaffolding**: generate a new repository once; no template update/rebase workflow required.
-- **Git hosting**: GitHub, created individually (no org policies assumed).
-- **Project type**: Python-based, with a **switchable “kind”** of repo; **default = `service`**.
-- **Dependency management**: `uv` with **committed `uv.lock` in every repo**.
-- **Build/automation**: `Makefile`, **POSIX-only** targets, `make` calls `uv` directly.
-- **Docs/agentic files**: copy a set of Markdown/agentic instruction files verbatim (e.g., `AGENTS.md` and related files).
-- **Security checks**: include Python tooling and make targets for **secret scanning** / pre-commit scanning (e.g., `make secret-scan`).
+- **One-shot scaffolding**: generate a new repository once; no template update/rebase workflow is required.
+- **Template source**: this repository is the Copier template source.
+- **Project shape**: one general-purpose Python starter template for v1.
+- **Dependency management**: `uv` only, with lockfile generated via standard commands.
+- **Build/automation**: `Makefile` remains the main interface.
+- **Packaging**: keep `src/` layout as the source of truth.
+- **Tests**: generated projects must validate installed-package behavior and must not rely on path hacks.
+- **Docs/policy files**: preserve repo-managed Markdown and instruction files unless they require templated identifiers.
+- **Security checks**: generated projects must keep the current secret-scan workflow and related make targets.
 
 ---
 
 ## High-level approach
-Use a dedicated GitHub repository that contains the template, rendered via **Copier** (template renderer) and invoked via **uvx** (so contributors don’t need a global install).
 
-Why this fits:
-- Works with **Git URL sources** (template repo lives on GitHub).
-- Supports **templating variables** (repo name/slug/package name).
-- Supports conditional file/directory generation for **repo “kinds”**.
-- Supports a **non-interactive** mode using flags, with a clean path to **answers files** later.
+Use **Copier** to render this repository into a new repository. The root repo owns Copier configuration and validation; the `template/` subdirectory owns the rendered payload.
 
----
+Example target workflow:
 
-## Developer experience (DX)
-
-### Create a new repo locally (render from GitHub)
-Example (non-interactive):
 ```bash
-uvx copier copy --trust gh:<you>/<template-repo> ./<repo_slug> \
-  --data repo_slug=<repo_slug> \
-  --data repo_name="<Repo Name>" \
-  --data project_kind=service \
+uvx copier copy --trust /path/to/python-repo-template ./my-new-repo \
+  --data repo_slug=my-new-repo \
   --defaults
 ```
 
-Notes:
-- `--defaults` uses default values for any non-specified variables.
-- `--trust` allows `copier_extensions.py` (if used) to compute derived values like `package_name`.
+GitHub-hosted usage can remain a supported invocation mode later:
 
-### Optional: answers/config file (later, but supported now)
 ```bash
-uvx copier copy --trust gh:<you>/<template-repo> ./<repo_slug> \
-  --answers-file ./template-answers.yml \
+uvx copier copy --trust gh:<owner>/python-repo-template ./my-new-repo \
+  --data repo_slug=my-new-repo \
   --defaults
 ```
 
----
-
-## Template repo contents
-
-### Suggested top-level layout
-```
-python-repo-template/
-  copier.yml
-  copier_extensions.py              # optional, for derived values (slug → package)
-  .gitignore
-  .editorconfig
-  .python-version
-  Makefile
-  pyproject.toml.jinja
-  uv.lock                           # committed baseline lockfile
-  README.md.jinja
-  AGENTS.md                         # copied verbatim (no templating suffix)
-  agentic/                          # copied verbatim
-    ...
-  .github/
-    workflows/
-      ci.yml
-  src/
-    {{ package_name }}/
-      __init__.py
-      ...
-  tests/
-    ...
-  service/                          # optional: service skeleton, conditionally included
-    app.py
-    ...
-  library/                          # optional: library skeleton, conditionally included
-    ...
-  cli/                              # optional: cli skeleton, conditionally included
-    ...
-```
-
-### File naming rules
-- Use `.jinja` suffix for files that require variable substitution (e.g., `pyproject.toml.jinja`, `README.md.jinja`).
-- Keep agentic files (e.g., `AGENTS.md`, instruction directories) as plain files so they are copied verbatim.
-- Use Jinja templating in file and directory names where needed:
-  - `src/{{ package_name }}/...`
+The implementation should not run post-render install commands automatically. Generated repositories should be initialized explicitly by the user after render.
 
 ---
 
-## Variables and naming conventions (minimal set)
+## Template contract
 
-### Required user-provided
-- `repo_slug` (kebab-case, e.g., `my-cool-service`)
-- `repo_name` (display name; default: same as slug)
+### Required template inputs
+- `repo_slug`: kebab-case repository name, for example `my-new-repo`
 
-### Derived / computed
-- `package_name` (snake_case; derived from slug, e.g., `my_cool_service`)
+### Derived or defaulted values
+- `repo_name`: defaults to a display form derived from `repo_slug`, or to the slug itself if no better transformation is introduced
+- `package_name`: derived from `repo_slug` and used for Python module/package paths
+- `python_version`: default to the baseline this repo standardizes on during implementation
 
-### Optional but recommended defaults
-- `project_kind`: one of `service`, `library`, `cli` (**default: `service`**)
-- `python_version`: default `3.12` (or whatever you standardize on)
-
-### Derivation rules for `package_name`
-Implement in `copier_extensions.py`:
-- lower-case
+### `package_name` derivation rules
+- lower-case the slug
 - replace `-` with `_`
-- strip characters not in `[a-z0-9_]`
-- if it doesn’t start with `[a-z_]`, prefix with `_`
+- strip characters outside `[a-z0-9_]`
+- if the name does not start with `[a-z_]`, prefix `_`
 
-This prevents invalid import/module names from common repo slugs.
+The repo may keep a local Python helper for validation, but the actual Copier render path should prefer built-in templating where possible.
 
----
-
-## Repo “kinds” (service/library/cli)
-
-### Default = service
-- Provide a minimal, opinionated skeleton for a typical service.
-- Keep library/cli scaffolding available but optional via `project_kind`.
-
-### Conditional file/directory inclusion
-Use a simple conditional naming pattern in the template so only relevant folders render.
-Typical pattern:
-- Put kind-specific files under directories named with a conditional Jinja expression.
-- When the expression renders to an empty string, Copier skips the path.
-
-Example conceptually:
-- `{{ 'service' if project_kind == 'service' else '' }}/app.py`
-
-(Exact implementation details can be adjusted once you finalize how you want “kinds” to be laid out.)
+### Generated repository interface
+- package source renders to `src/<package_name>/`
+- `[project.name]` in `pyproject.toml` renders from the chosen repo/package naming policy
+- console script entrypoint renders consistently with the package module path
+- CLI labels and help text must not hard-code `template`
+- tests must import from the rendered package name
+- `Makefile` targets remain the canonical local workflow interface
 
 ---
 
-## Dependency management policy (uv + lockfiles)
+## Files to template vs copy
 
-### Policy
-- `uv.lock` is committed for every repo.
-- CI should **install using the lockfile** to avoid drift.
+### Templated files
+The implementation should template the files that currently hard-code the concrete `template` project identity:
+- `pyproject.toml`
+- `README.md`
+- package directory names under `src/`
+- package imports in code and tests
+- CLI program name and printed labels
+- any docs that reference the concrete package/repo name and would be incorrect in generated repos
 
-### pyproject structure
-- Define runtime dependencies in `[project.dependencies]`
-- Define dev/test tooling in `[dependency-groups]` (e.g., `dev`, `test`, `lint`), depending on how you prefer to split.
+### Verbatim or near-verbatim copies
+These should stay unchanged unless a repo-specific identifier forces a small template substitution:
+- `AGENTS.md`
+- `CONTRIBUTING.md`
+- `SECURITY.md`
+- most documentation content under `docs/`
+- the secret scanning implementation and make target semantics
 
-### Typical commands
-- Local install:
-  - `uv sync --dev`
-- CI install:
-  - `uv sync --locked --dev`
-
-### Lockfile strategy in template
-- Include a baseline `uv.lock` consistent with your default tooling (pytest/ruff/type checker).
-- On first use per repo, maintainers can regenerate lock if needed:
-  - `uv lock`
-
-(Per your constraint: do **not** auto-run `uv sync` during template generation.)
+The implementation should prefer minimal templating. Only introduce substitutions where leaving `template` or repo-specific paths would make the generated repository incorrect.
 
 ---
 
-## Makefile design (minimal surface, POSIX)
+## Repository changes required to support templating
 
-### Targets (recommended minimum)
-- `install`: install deps for development
-- `test`: run unit tests
-- `lint`: run linter(s)
-- `typecheck`: run type checker
-- `fmt`: auto-format
-- `secret-scan`: run secret scanning hooks/tools
-- `precommit`: run pre-commit on the whole repo (optional but useful)
+### Add Copier metadata
+- add `copier.yml` with the v1 question set centered on `repo_slug`
+- keep `copier_extensions.py` only as local validation/support code if direct Copier templating is sufficient
+- add a short usage section for rendering the template, either in `README.md` or a dedicated template-usage doc
 
-### Example semantics
-- `install` → `uv sync --dev`
-- `test` → `uv run pytest`
-- `lint` → `uv run ruff check .`
-- `fmt` → `uv run ruff format .`
-- `typecheck` → `uv run mypy .` (or `pyright`)
-- `secret-scan` → `uv run pre-commit run --all-files` (with secret-scanning hooks enabled)
+### Convert the current package layout into templated form
+- keep the concrete payload inside `template/` and render it to the destination repo root
+- rename the concrete package path from `template/src/template` to a templated package path in the template source
+- convert code imports and test imports to use templated package names
+- render the console script and module entrypoint from the same package variable
 
----
+### Keep the current workflow contract
+- preserve `make sync`, `make install`, `make fmt`, `make lint`, `make type`, `make test`, `make run`, and `make secret-scan`
+- provide explicit `make lock` and `make sync` workflow so generated repos can create/populate `uv.lock`
+- ensure generated repositories do not require `PYTHONPATH` manipulation
 
-## Pre-commit and secret scanning
-
-### Recommended baseline
-Include a `.pre-commit-config.yaml` with at least:
-- basic hygiene hooks (trailing whitespace, end-of-file-fixer)
-- Python checks (ruff)
-- secret scanning hook(s)
-
-Then:
-- `make secret-scan` runs the secret scanning hook(s) across the repo.
-
-You can start lightweight (only one scanner) and evolve later without changing the workflow interface.
+### Preserve the current security workflow
+- keep the local Gemini-format secret scanner
+- preserve `make secret-scan` and `make secret-scan-staged`
+- preserve repo-managed git hook installation if it remains useful in generated repositories
 
 ---
 
-## GitHub Actions CI (unit + lint/typecheck)
+## Explicit non-goals for v1
+- no `project_kind` switch
+- no conditional `service` / `library` / `cli` directory trees
+- no template update/rebase workflow for already-generated repositories
+- no automatic post-render `uv sync`
+- no requirement to add CI, pre-commit, or GitHub automation in the first templating pass unless separately prioritized
 
-### Workflow goals
-- Run on PRs and pushes to default branch.
-- Jobs:
-  - unit tests
-  - lint
-  - typecheck
-
-### Recommended structure
-- Use `actions/checkout`
-- Use `astral-sh/setup-uv` to install uv and enable caching (optional but helpful).
-- Use `uv sync --locked --dev`
-- Run `make test`, `make lint`, `make typecheck` (this keeps CI aligned with local workflow).
-
-### Python versions
-Start with one version (e.g., 3.12). If you later want a version matrix, it is easy to add.
+These can be follow-on enhancements after the base template is rendering correctly.
 
 ---
 
-## Template rendering and initialization steps
+## Validation and acceptance criteria
 
-### Local init (after copier renders files)
-```bash
-cd <repo_slug>
-git init
-git add -A
-git commit -m "Initial commit"
-```
+The templating work is done when:
+- this repo can render a new repository from Copier without manual code edits
+- generated repositories contain no hard-coded `template` package/import references
+- generated repositories preserve the same local development workflow exposed by the current `Makefile`
+- generated repositories keep deterministic lock generation and editable install behavior
+- generated repositories keep the secret scan commands working with the rendered package path
 
-### Optional: create GitHub repo and push (manual, explicit)
-If you use GitHub CLI:
-```bash
-gh repo create <repo_slug> --public --source=. --remote=origin --push
-```
+### Required validation scenarios
+- render a repo from a normal slug such as `sample-app`
+- render a repo from a slug that exercises derivation, such as `99-fast-api`
+- in each rendered repo, run:
+  - `make install`
+  - `make test`
+  - `make lint`
+  - `make type`
+  - `make secret-scan`
 
-(Keep this outside of Copier for now to stay within “one-shot scaffolding” and avoid tool coupling.)
-
----
-
-## What is *not* included (by design)
-- No “update template in existing repos” mechanism.
-- No automatic post-render `uv sync`.
-- No org-specific governance defaults yet (CODEOWNERS rules, branch protections, etc.)—can be added later.
-
----
-
-## Suggested next steps (implementation order)
-1. Create the GitHub template repo with the full file layout and baseline `pyproject.toml.jinja`, `Makefile`, and CI workflow.
-2. Add `copier.yml` with minimal variables (`repo_slug`, `repo_name`, `project_kind`, `python_version`).
-3. Add `copier_extensions.py` to derive `package_name`.
-4. Implement `service` default skeleton, and stub `library`/`cli` skeletons.
-5. Validate generation with:
-   - a “weird” slug (hyphens, numbers) to confirm package name derivation
-   - CI green on first push
-6. Write a short `TEMPLATE_USAGE.md` in the template repo showing the canonical `uvx copier copy ...` command.
+### Expected checks
+- package imports resolve from the rendered `src/<package_name>` path
+- console script and `python -m` entrypoint use the rendered package name
+- tests do not rely on source-tree path hacks
+- the generated README and project metadata no longer mention `template`
 
 ---
 
-## References
-- Copier: https://github.com/copier-org/copier
-- uv GitHub Actions integration: https://docs.astral.sh/uv/guides/integration/github/
-- uv dependency groups / project deps: https://docs.astral.sh/uv/concepts/projects/dependencies/
+## Implementation order
+1. Add Copier configuration and package-name derivation.
+2. Convert package paths, imports, and metadata to templated values.
+3. Template the user-facing docs and CLI labels that currently hard-code the concrete repo identity.
+4. Validate generated repos with at least two slugs, including one edge-case slug.
+5. Refine any remaining repo-specific docs only where incorrect carry-over remains.
+
+---
+
+## Assumptions
+- `python-repo-template` is the long-term template source rather than a staging repo for a different template repository.
+- v1 should optimize for a clean, reliable base Python starter template rather than breadth of scaffolding options.
+- Existing `Makefile` commands, `uv` usage, `src/` layout, and secret-scan behavior are part of the intended generated-repo contract.
+- CI and pre-commit standardization are optional follow-up work, not blockers for the initial templating conversion.

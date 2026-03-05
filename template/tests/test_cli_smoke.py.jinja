@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from template.cli import main
+from {{ package_name }}.cli import main
 
 
 def test_cli_smoke(capsys) -> None:
     code = main([])
     assert code == 0
     out = capsys.readouterr().out
-    assert "template" in out
+    assert "{{ package_name }}" in out
 
 
 def test_cli_version(capsys) -> None:

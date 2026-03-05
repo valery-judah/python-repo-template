@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import argparse
 
-from template import __version__
+from {{ package_name }} import __version__
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="template", description="Project CLI entrypoint.")
+    parser = argparse.ArgumentParser(prog="{{ package_name }}", description="Project CLI entrypoint.")
     parser.add_argument("--version", action="store_true", help="Print version and exit.")
     return parser
 
@@ -26,9 +26,9 @@ def main(argv: list[str] | None = None) -> int:
             markup=False,
             highlight=False,
         )
-        console.print("template: OK")
+        console.print("{{ package_name }}: OK")
     except ModuleNotFoundError:
-        print("template: OK")
+        print("{{ package_name }}: OK")
     return 0
 
 

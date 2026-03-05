@@ -1,0 +1,33 @@
+_min_copier_version: "9"
+_subdirectory: template
+_templates_suffix: .jinja
+_exclude:
+  - "**/.DS_Store"
+  - "**/__pycache__"
+  - ".pytest_cache"
+  - ".ruff_cache"
+  - ".mypy_cache"
+  - ".venv"
+
+repo_slug:
+  type: str
+  help: Repository slug
+  validator: >-
+    {% if not repo_slug %}
+    repo_slug is required
+    {% endif %}
+
+repo_name:
+  type: str
+  help: Project display name
+  default: "{{ repo_slug }}"
+
+python_version:
+  type: str
+  help: Supported Python version
+  default: "3.11"
+
+package_name:
+  type: str
+  default: "{{ ('_' if (repo_slug | lower | replace('-', '_'))[:1].isdigit() else '') ~ (repo_slug | lower | replace('-', '_')) }}"
+  when: false
