@@ -59,7 +59,15 @@ test: install ## Run template-engine unit tests
 
 .PHONY: render-test
 render-test: install ## Render fixture repos and run their checks
-	$(PYTHON) scripts/render_validate.py
+	$(PYTHON) scripts/render_validate.py --mode full-e2e
+
+.PHONY: render-test-render
+render-test-render: install ## Render fixture repos and run render-only assertions
+	$(PYTHON) scripts/render_validate.py --mode render-only
+
+.PHONY: render-test-init
+render-test-init: install ## Render fixture repos, run make init, and verify init artifacts
+	$(PYTHON) scripts/render_validate.py --mode init
 
 .PHONY: check
 check: fmt lint type test render-test ## Run all template-engine checks

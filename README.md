@@ -101,5 +101,19 @@ Use these commands when working on the template engine and validation fixtures i
 ```bash
 make sync
 make test
+make render-test-render
+make render-test-init
 make render-test
+```
+
+The render validation is split by depth:
+- `make render-test-render`: render-only assertions for layout, identity, and templated content
+- `make render-test-init`: render plus `make init`, including init artifact checks
+- `make render-test`: full end-to-end validation of the generated repo commands
+
+You can also run the script directly and select scenarios:
+
+```bash
+uv run python scripts/render_validate.py --mode render-only --scenario sample-app
+uv run python scripts/render_validate.py --mode full-e2e
 ```
