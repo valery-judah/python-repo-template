@@ -26,7 +26,11 @@ ensure-uv: ## Check if uv is installed
 
 .PHONY: install-git-hooks
 install-git-hooks: ## Configure git to use repo-managed hooks
-	git config core.hooksPath .githooks
+	@if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
+		git config core.hooksPath .githooks; \
+	else \
+		echo "Not in a git repository. Skipping git hooks setup."; \
+	fi
 
 .PHONY: sync
 sync: ensure-uv ## Sync dependencies using uv (creates/updates lockfile)
