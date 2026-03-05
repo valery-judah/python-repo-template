@@ -85,12 +85,20 @@ def _scan_text(path: str, text: str) -> list[SecretFinding]:
     return findings
 
 
+def _iter_repo_files(repo_root: Path) -> list[str]:
+    return [
+        raw_path
+        for raw_path in _run_git(
+            ["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+            cwd=repo_root,
+        ).stdout.split("\0")
+        if raw_path
+    ]
+
+
 def _scan_repo(repo_root: Path) -> list[SecretFinding]:
-    tracked_files = _run_git(["ls-files", "-z"], cwd=repo_root).stdout.split("\0")
     findings: list[SecretFinding] = []
-    for raw_path in tracked_files:
-        if not raw_path:
-            continue
+    for raw_path in _iter_repo_files(repo_root):
         file_path = repo_root / raw_path
         if not file_path.is_file():
             continue
