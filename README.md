@@ -73,10 +73,12 @@ Copier renders from the `template/` subdirectory into the destination repository
 Render from GitHub after committing and pushing template changes:
 
 ```bash
-uvx copier copy --trust gh:<github-user-or-org>/python-repo-template ./my-new-repo \
+uvx copier copy --trust gh:valery-judah/python-repo-template ./my-new-repo \
   --data repo_slug=my-new-repo \
   --defaults
 ```
+
+Create tags in the template repository with a simple release pattern such as `v0.1.0`, `v0.2.0`, or `v1.0.0`.
 
 To test the template from a local clone before pushing, render from the repo path instead:
 
