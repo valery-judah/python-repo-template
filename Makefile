@@ -1,12 +1,13 @@
 .DEFAULT_GOAL := help
 
-.PHONY: ensure-uv
-ensure-uv:
-	@command -v uv >/dev/null 2>&1 || { \
-		echo "Error: 'uv' is not installed or not on PATH."; \
-		echo "Install with: curl -LsSf https://astral.sh/uv/install.sh | sh"; \
-		exit 127; \
-	}
+# --- Variables ---
+UV_RUN := uv run
+PYTHON := $(UV_RUN) python
+RUFF   := $(UV_RUN) ruff
+MYPY   := $(UV_RUN) mypy
+PYTEST := $(UV_RUN) pytest
+
+# --- Environment & Setup ---
 
 .PHONY: help
 help: ## Show this help message
@@ -15,46 +16,60 @@ help: ## Show this help message
 	@echo "Targets:"
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
+.PHONY: ensure-uv
+ensure-uv: ## Check if uv is installed
+	@command -v uv >/dev/null 2>&1 || { \
+		echo "Error: 'uv' is not installed or not on PATH."; \
+		echo "Install with: curl -LsSf https://astral.sh/uv/install.sh | sh"; \
+		exit 127; \
+	}
+
+.PHONY: install-git-hooks
+install-git-hooks: ## Configure git to use repo-managed hooks
+	git config core.hooksPath .githooks
+
 .PHONY: sync
 sync: ensure-uv ## Sync template-engine dependencies
 	uv sync
 
 .PHONY: install
-install: sync ## Prepare the local template-engine environment
+install: sync install-git-hooks ## Prepare the local template-engine environment
+
+# --- Code Quality ---
 
 .PHONY: fmt
 fmt: ensure-uv ## Format and auto-fix the template-engine code
-	uv run ruff format .
-	uv run ruff check . --fix
+	$(RUFF) format .
+	$(RUFF) check . --fix
 
 .PHONY: lint
 lint: ensure-uv ## Run lint checks for the template-engine code
-	uv run ruff format . --check
-	uv run ruff check .
+	$(RUFF) format . --check
+	$(RUFF) check .
 
 .PHONY: type
 type: ensure-uv ## Run static type checks for template-engine code
-	uv run mypy copier_extensions.py scripts tests
+	$(MYPY) copier_extensions.py scripts tests
+
+# --- Testing ---
 
 .PHONY: test
 test: install ## Run template-engine unit tests
-	uv run pytest tests
+	$(PYTEST) tests
 
 .PHONY: render-test
 render-test: install ## Render fixture repos and run their checks
-	uv run python scripts/render_validate.py
+	$(PYTHON) scripts/render_validate.py
 
 .PHONY: check
 check: fmt lint type test render-test ## Run all template-engine checks
 
+# --- Security & Utilities ---
+
 .PHONY: secret-scan
 secret-scan: ## Scan tracked repository files for leaked Gemini API keys
-	@uv run python scripts/secret_scan.py --scope repo
+	@$(PYTHON) scripts/secret_scan.py --scope repo
 
 .PHONY: secret-scan-staged
 secret-scan-staged: ## Scan staged added lines for leaked Gemini API keys
-	@uv run python scripts/secret_scan.py --scope staged-added
-
-.PHONY: install-git-hooks
-install-git-hooks: ## Configure git to use repo-managed hooks
-	git config core.hooksPath .githooks
+	@$(PYTHON) scripts/secret_scan.py --scope staged-added
