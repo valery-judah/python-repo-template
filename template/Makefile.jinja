@@ -1,28 +1,21 @@
 .DEFAULT_GOAL := help
 
-# --- Variables ---
-UV_RUN := uv run
-PYTHON := $(UV_RUN) python
-RUFF   := $(UV_RUN) ruff
-MYPY   := $(UV_RUN) mypy
-PYTEST := $(UV_RUN) pytest
-
-# --- Environment & Setup ---
-
 .PHONY: help
 help: ## Show this help message
 	@echo "Usage: make <target>"
 	@echo ""
-	@echo "Targets:"
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
+	@echo "Repo & Infrastructure Targets:"
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-25s %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
+	@echo ""
+	@echo "Python developer tasks live in Poe."
+	@echo "Run 'uv run poe --help' or 'uv run poe <task>' for fmt/lint/type/test/run/build/clean."
 
-.PHONY: ensure-uv
-ensure-uv: ## Check if uv is installed
-	@command -v uv >/dev/null 2>&1 || { \
-		echo "Error: 'uv' is not installed or not on PATH."; \
-		echo "Install with: curl -LsSf https://astral.sh/uv/install.sh | sh"; \
-		exit 127; \
-	}
+.PHONY: sync
+sync: ## Sync project dependencies
+	uv sync --group dev
+
+.PHONY: init
+init: sync install-git-hooks ## Prepare the local development environment
 
 .PHONY: install-git-hooks
 install-git-hooks: ## Configure git to use repo-managed hooks
@@ -31,62 +24,3 @@ install-git-hooks: ## Configure git to use repo-managed hooks
 	else \
 		echo "Not in a git repository. Skipping git hooks setup."; \
 	fi
-
-.PHONY: sync
-sync: ensure-uv ## Sync dependencies using uv (creates/updates lockfile)
-	uv sync
-
-.PHONY: lock
-lock: ensure-uv ## Generate or refresh uv.lock
-	uv lock
-
-.PHONY: install
-install: sync install-git-hooks ## Install the package in editable mode
-	uv pip install --editable .
-
-.PHONY: init
-init: sync install ## Bootstrap local dev environment
-
-.PHONY: add-rich
-add-rich: ensure-uv ## Add `rich` dependency via uv (updates pyproject + uv.lock)
-	uv add rich
-	uv sync
-
-# --- Code Quality ---
-
-.PHONY: fmt
-fmt: ensure-uv ## Format and auto-fix lint issues
-	$(RUFF) format .
-	$(RUFF) check . --fix
-
-.PHONY: lint
-lint: ensure-uv ## Run lint checks
-	$(RUFF) format . --check
-	$(RUFF) check .
-
-.PHONY: type
-type: ensure-uv ## Run static type checks
-	$(MYPY) src
-
-# --- Testing ---
-
-.PHONY: test
-test: install ## Run unit tests
-	$(PYTEST) tests
-
-.PHONY: check
-check: fmt lint type test ## Run all checks
-
-# --- Security & Utilities ---
-
-.PHONY: secret-scan
-secret-scan: ## Scan tracked repository files for leaked Gemini API keys
-	@PYTHONPATH=src $(PYTHON) -m {{ package_name }}.devtools.secret_scan --scope repo
-
-.PHONY: secret-scan-staged
-secret-scan-staged: ## Scan staged added lines for leaked Gemini API keys
-	@PYTHONPATH=src $(PYTHON) -m {{ package_name }}.devtools.secret_scan --scope staged-added
-
-.PHONY: run
-run: install ## Run {{ package_name }} demo CLI
-	$(PYTHON) -m {{ package_name }}.cli

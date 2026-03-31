@@ -1,0 +1,50 @@
+[tasks.fmt]
+help = "Format and auto-fix lint issues"
+sequence = [
+  { cmd = "ruff format ." },
+  { cmd = "ruff check . --fix" },
+]
+
+[tasks.fmt-check]
+help = "Check formatting without modifying files"
+cmd = "ruff format . --check"
+
+[tasks.lint]
+help = "Run lint checks"
+cmd = "ruff check ."
+
+[tasks.type]
+help = "Run static type checks"
+cmd = "pyright"
+
+[tasks.test]
+help = "Run template-engine unit tests"
+cmd = "pytest"
+
+[tasks.render-test-render]
+help = "Render fixture repos and run render-only assertions"
+cmd = "python scripts/render_validate.py --mode render-only"
+
+[tasks.render-test-init]
+help = "Render fixture repos, run repo init, and verify init artifacts"
+cmd = "python scripts/render_validate.py --mode init"
+
+[tasks.render-test]
+help = "Render fixture repos and run their end-to-end checks"
+cmd = "python scripts/render_validate.py --mode full-e2e"
+
+[tasks.secret-scan]
+help = "Scan tracked repository files for leaked Gemini API keys"
+cmd = "python scripts/secret_scan.py --scope repo"
+
+[tasks.secret-scan-staged]
+help = "Scan staged added lines for leaked Gemini API keys"
+cmd = "python scripts/secret_scan.py --scope staged-added"
+
+[tasks.verify]
+help = "Run the read-only verification suite"
+sequence = ["fmt-check", "lint", "type", "test"]
+
+[tasks.check]
+help = "Run the full verification and render validation suite"
+sequence = ["verify", "render-test"]

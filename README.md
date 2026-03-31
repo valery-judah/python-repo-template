@@ -26,8 +26,8 @@ Bootstrap the generated repository:
 ```bash
 cd my-new-repo
 make init
-make test
-make run
+uv run poe verify
+uv run poe run
 ```
 
 Example: `repo_slug=my-new-repo` produces a package named `my_new_repo`.
@@ -38,12 +38,12 @@ This template is an opinionated starting point for Python projects that are deve
 It provides three things out of the box:
 
 - agent operating context via `AGENTS.md`
-- local development and CI loops via standard `make` targets
+- a command model built around `uv`, `poe`, and thin `make` wrappers
 - a minimal Python project baseline built around `uv`, `src/`, tests, and a `Makefile`
 
 `AGENTS.md` establishes repository-specific rules, command policy, workflow expectations, and done criteria. That gives coding agents a fixed contract for how to work in the repository instead of relying on ad hoc instructions in each session.
 
-The local command surface includes targets such as `make fmt`, `make lint`, `make type`, and `make test`. Those commands are meant to be used both by humans and by coding agents, locally and in CI, so validation stays consistent.
+Python workflows live in Poe and run through `uv run poe <task>`. `make` remains available for repo setup and local wrapper commands such as `make install` and `make install-git-hooks`.
 
 The generated project also includes a basic Python repository structure that is ready to extend rather than reinvent. The goal is not only to scaffold files, but to create a repository with a predefined execution model: agents know how to operate, contributors know which commands matter, and automation can enforce the same checks everywhere.
 
@@ -55,6 +55,8 @@ scripts/
 template/
   pyproject.toml.jinja
   Makefile.jinja
+  poe_tasks.toml.jinja
+  scripts/
   src/
   tests/
 ```
@@ -93,29 +95,45 @@ Then bootstrap the generated repository:
 ```bash
 cd my-new-repo
 make init
-make test
-make run
+uv run poe verify
+uv run poe run
 ```
 
 ## Maintaining The Template
+Bootstrap the local template-engine environment:
+
+```bash
+make install
+```
+
 Use these commands when working on the template engine and validation fixtures in this repository:
 
 ```bash
-make sync
-make test
-make render-test-render
-make render-test-init
-make render-test
+uv run poe fmt
+uv run poe lint
+uv run poe type
+uv run poe test
+uv run poe verify
+uv run poe render-test-render
+uv run poe render-test-init
+uv run poe render-test
 ```
 
 The render validation is split by depth:
-- `make render-test-render`: render-only assertions for layout, identity, and templated content
-- `make render-test-init`: render plus `make init`, including init artifact checks
-- `make render-test`: full end-to-end validation of the generated repo commands
+- `uv run poe render-test-render`: render-only assertions for layout, identity, and templated content
+- `uv run poe render-test-init`: render plus `make init`, including init artifact checks
+- `uv run poe render-test`: full end-to-end validation of the generated repo commands
 
 You can also run the script directly and select scenarios:
 
 ```bash
 uv run python scripts/render_validate.py --mode render-only --scenario sample-app
 uv run python scripts/render_validate.py --mode full-e2e
+```
+
+Inspect the available command surface directly with:
+
+```bash
+uv run poe --help
+make help
 ```

@@ -2,16 +2,12 @@
 
 ## Development setup
 ```bash
-make sync
-make install
+make init
 ```
 
 ## Quality checks
 ```bash
-make fmt
-make lint
-make type
-make test
+uv run poe verify
 ```
 
 ## Adding dependencies
@@ -21,5 +17,4 @@ make test
 ## Pull requests
 - Keep changes small and focused.
 - Add/update tests for behavior changes.
-- Ensure `make check` passes.
-
+- Ensure `uv run poe verify` passes.

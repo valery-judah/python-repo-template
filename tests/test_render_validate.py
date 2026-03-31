@@ -39,6 +39,9 @@ name = "sample-app"
 
 [project.scripts]
 sample_app = "sample_app.cli:main"
+
+[tool.poe]
+include = "poe_tasks.toml"
 """.strip()
         + "\n",
     )
@@ -47,6 +50,8 @@ sample_app = "sample_app.cli:main"
     _write_text(root / "CONTRIBUTING.md", "# Contributing\n")
     _write_text(root / "SECURITY.md", "# Security\n")
     _write_text(root / ".githooks" / "pre-commit", "#!/bin/sh\n")
+    _write_text(root / "poe_tasks.toml", '[tasks.verify]\ncmd = "pytest"\n')
+    _write_text(root / "scripts" / "clean.py", "print('clean')\n")
     _write_text(root / "tests" / "test_cli_smoke.py", "from sample_app.cli import main\n")
     _write_text(
         root / "tests" / "test_secret_scan.py", "from sample_app.devtools.secret_scan import main\n"
@@ -139,4 +144,36 @@ def test_run_validation_mode_runs_init_assertions_after_init_command(tmp_path: P
         ("assert", "render"),
         ("command", "make init"),
         ("assert", "init"),
+    ]
+
+
+def test_run_validation_mode_full_e2e_uses_poe_commands(tmp_path: Path) -> None:
+    repo = _make_rendered_repo(tmp_path)
+    mode = render_validate.VALIDATION_MODES["full-e2e"]
+    calls: list[tuple[str, str]] = []
+
+    def fake_run_assertion_group(group_name: str, repo: Any) -> None:
+        calls.append(("assert", group_name))
+
+    def fake_run(command: tuple[str, ...], cwd: Path) -> None:
+        calls.append(("command", " ".join(command)))
+        if command == ("make", "init"):
+            (cwd / "uv.lock").write_text("", encoding="utf-8")
+
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(render_validate, "_run_assertion_group", fake_run_assertion_group)
+    monkeypatch.setattr(render_validate, "_run", fake_run)
+    try:
+        render_validate._run_validation_mode(mode=mode, repo=repo)
+    finally:
+        monkeypatch.undo()
+
+    assert calls == [
+        ("assert", "render"),
+        ("command", "make init"),
+        ("assert", "init"),
+        ("command", "uv run poe verify"),
+        ("command", "uv run poe run"),
+        ("command", "uv run poe secret-scan"),
+        ("command", "uv run poe build"),
     ]

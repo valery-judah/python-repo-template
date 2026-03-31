@@ -12,6 +12,16 @@ from pathlib import Path
 from typing import cast
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+SNAPSHOT_EXCLUDES = (
+    ".git",
+    ".venv",
+    ".venv-*",
+    "__pycache__",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".mypy_cache",
+    ".pyright",
+)
 
 
 def _load_to_package_name() -> Callable[[str], str]:
@@ -38,10 +48,10 @@ FORBIDDEN_SNIPPETS = (
 TEXT_FILE_SUFFIXES = {".md", ".py", ".toml", ".txt", ""}
 INIT_COMMANDS = (("make", "init"),)
 CHECK_COMMANDS = (
-    ("make", "test"),
-    ("make", "lint"),
-    ("make", "type"),
-    ("make", "secret-scan"),
+    ("uv", "run", "poe", "verify"),
+    ("uv", "run", "poe", "run"),
+    ("uv", "run", "poe", "secret-scan"),
+    ("uv", "run", "poe", "build"),
 )
 
 
@@ -95,7 +105,19 @@ def _run(command: tuple[str, ...], cwd: Path) -> None:
     subprocess.run(command, cwd=cwd, check=True)
 
 
-def _render(repo_root: Path, dest: Path, scenario: Scenario) -> None:
+def _create_source_snapshot(repo_root: Path, base_dir: Path) -> Path:
+    snapshot_root = base_dir / "_template_source"
+    if snapshot_root.exists():
+        return snapshot_root
+    shutil.copytree(
+        repo_root,
+        snapshot_root,
+        ignore=shutil.ignore_patterns(*SNAPSHOT_EXCLUDES),
+    )
+    return snapshot_root
+
+
+def _render(source_root: Path, dest: Path, scenario: Scenario) -> None:
     _run(
         (
             "uv",
@@ -103,7 +125,7 @@ def _render(repo_root: Path, dest: Path, scenario: Scenario) -> None:
             "copier",
             "copy",
             "--trust",
-            str(repo_root),
+            str(source_root),
             str(dest),
             "--data",
             f"repo_slug={scenario.repo_slug}",
@@ -111,7 +133,7 @@ def _render(repo_root: Path, dest: Path, scenario: Scenario) -> None:
             f"repo_name={scenario.repo_name}",
             "--defaults",
         ),
-        cwd=repo_root,
+        cwd=source_root,
     )
 
 
@@ -150,6 +172,8 @@ def _assert_required_files(repo: RenderedRepo) -> None:
         repo.root / "CONTRIBUTING.md",
         repo.root / "SECURITY.md",
         repo.root / ".githooks" / "pre-commit",
+        repo.root / "poe_tasks.toml",
+        repo.root / "scripts" / "clean.py",
         repo.root / "tests" / "test_cli_smoke.py",
         repo.root / "tests" / "test_secret_scan.py",
         repo.root / "src" / repo.package_name / "cli.py",
@@ -173,6 +197,7 @@ def _assert_project_metadata(repo: RenderedRepo) -> None:
     pyproject = _read_pyproject(repo.root)
     project = cast(dict[str, object], pyproject["project"])
     scripts = cast(dict[str, str], project["scripts"])
+    tool = cast(dict[str, object], pyproject["tool"])
 
     if project["name"] != repo.repo_slug:
         raise AssertionError(
@@ -184,6 +209,10 @@ def _assert_project_metadata(repo: RenderedRepo) -> None:
         raise AssertionError(
             f"Expected console script for {repo.package_name!r}, got {entrypoint!r}."
         )
+
+    poe_config = cast(dict[str, str], tool.get("poe", {}))
+    if poe_config.get("include") != "poe_tasks.toml":
+        raise AssertionError("Expected pyproject to include poe_tasks.toml via [tool.poe].")
 
 
 def _assert_readme_identity(repo: RenderedRepo) -> None:
@@ -286,8 +315,9 @@ def _run_validation_mode(mode: ValidationMode, repo: RenderedRepo) -> None:
 
 def _run_scenario(scenario: Scenario, base_dir: Path, mode: ValidationMode) -> None:
     dest = base_dir / scenario.repo_slug
+    source_root = _create_source_snapshot(repo_root=REPO_ROOT, base_dir=base_dir)
     print(f"==> render {scenario.repo_slug}")
-    _render(repo_root=REPO_ROOT, dest=dest, scenario=scenario)
+    _render(source_root=source_root, dest=dest, scenario=scenario)
     _init_git_repo(dest=dest)
 
     rendered_repo = RenderedRepo(scenario=scenario, root=dest)

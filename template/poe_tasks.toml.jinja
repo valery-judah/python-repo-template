@@ -1,0 +1,50 @@
+[tasks.fmt]
+help = "Format and auto-fix lint issues"
+sequence = [
+  { cmd = "ruff format ." },
+  { cmd = "ruff check . --fix" },
+]
+
+[tasks.fmt-check]
+help = "Check formatting without modifying files"
+cmd = "ruff format . --check"
+
+[tasks.lint]
+help = "Run lint checks"
+cmd = "ruff check ."
+
+[tasks.type]
+help = "Run static type checks"
+cmd = "pyright"
+
+[tasks.test]
+help = "Run tests"
+cmd = "pytest"
+
+[tasks.verify]
+help = "Run the read-only verification suite"
+sequence = ["fmt-check", "lint", "type", "test"]
+
+[tasks.check]
+help = "Alias for the read-only verification suite"
+sequence = ["verify"]
+
+[tasks.run]
+help = "Run the demo CLI"
+cmd = "python -m {{ package_name }}.cli"
+
+[tasks.secret-scan]
+help = "Scan tracked repository files for leaked Gemini API keys"
+cmd = "python -m {{ package_name }}.devtools.secret_scan --scope repo"
+
+[tasks.secret-scan-staged]
+help = "Scan staged added lines for leaked Gemini API keys"
+cmd = "python -m {{ package_name }}.devtools.secret_scan --scope staged-added"
+
+[tasks.build]
+help = "Build source and wheel distributions"
+cmd = "uv build"
+
+[tasks.clean]
+help = "Remove generated local artifacts"
+cmd = "python scripts/clean.py"

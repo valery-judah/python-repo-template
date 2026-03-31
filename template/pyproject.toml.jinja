@@ -14,7 +14,8 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-  "mypy>=1.17.0,<1.19.0",
+  "poethepoet>=0.32,<1",
+  "pyright>=1.1.408",
   "pytest>=8.4.0",
   "ruff>=0.12.0",
 ]
@@ -32,12 +33,40 @@ target-version = "py{{ python_version | replace('.', '') }}"
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
 
-[tool.mypy]
-python_version = "{{ python_version }}"
-strict = true
-warn_unreachable = true
-warn_unused_ignores = true
+[tool.pyright]
+pythonVersion = "{{ python_version }}"
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnnecessaryTypeIgnoreComment = "warning"
+include = ["src", "tests", "scripts/clean.py"]
+exclude = [
+  ".venv",
+  ".venv/**",
+  ".venv-*",
+  ".venv-*/**",
+  "**/.venv",
+  "**/.venv/**",
+  "**/.venv-*",
+  "**/.venv-*/**",
+  "**/node_modules",
+  "**/__pycache__",
+  "**/.*",
+  ".pytest_cache",
+  ".ruff_cache",
+  ".mypy_cache",
+  ".pyright",
+  "build",
+  "dist",
+]
+executionEnvironments = [
+  { root = ".", extraPaths = ["src"] },
+]
 
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]
+
+[tool.poe]
+include = "poe_tasks.toml"

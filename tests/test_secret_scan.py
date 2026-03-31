@@ -1,10 +1,26 @@
 from __future__ import annotations
 
+import importlib.util
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
-from scripts.secret_scan import PATTERNS, _scan_text
+
+def _load_secret_scan_module() -> Any:
+    module_path = Path(__file__).resolve().parents[1] / "scripts" / "secret_scan.py"
+    spec = importlib.util.spec_from_file_location("secret_scan", module_path)
+    if spec is None or spec.loader is None:
+        raise AssertionError("Failed to load scripts/secret_scan.py for testing.")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+secret_scan = _load_secret_scan_module()
+PATTERNS = secret_scan.PATTERNS
+scan_text = secret_scan.scan_text
 
 VALID_GEMINI_KEY = "AIza" + "A" * 35
 
@@ -42,7 +58,7 @@ def _commit_all(repo: Path, message: str) -> None:
 
 
 def test_gemini_pattern_matches_expected_shape() -> None:
-    findings = _scan_text("example.txt", f"token={VALID_GEMINI_KEY}")
+    findings = scan_text("example.txt", f"token={VALID_GEMINI_KEY}")
 
     assert len(findings) == 1
     assert findings[0].pattern_name == "gemini_api_key"
@@ -50,13 +66,13 @@ def test_gemini_pattern_matches_expected_shape() -> None:
 
 
 def test_gemini_pattern_rejects_bare_prefix() -> None:
-    findings = _scan_text("example.txt", "AIza")
+    findings = scan_text("example.txt", "AIza")
 
     assert findings == []
 
 
 def test_gemini_pattern_rejects_short_example() -> None:
-    findings = _scan_text("example.txt", "AIzaSHORTEXAMPLE")
+    findings = scan_text("example.txt", "AIzaSHORTEXAMPLE")
 
     assert findings == []
 
@@ -64,7 +80,7 @@ def test_gemini_pattern_rejects_short_example() -> None:
 def test_gemini_pattern_rejects_invalid_characters() -> None:
     invalid = "AIza" + "A" * 34 + "!"
 
-    findings = _scan_text("example.txt", invalid)
+    findings = scan_text("example.txt", invalid)
 
     assert findings == []
 
@@ -72,7 +88,7 @@ def test_gemini_pattern_rejects_invalid_characters() -> None:
 def test_gemini_pattern_requires_boundaries() -> None:
     wrapped = f"x{VALID_GEMINI_KEY}y"
 
-    findings = _scan_text("example.txt", wrapped)
+    findings = scan_text("example.txt", wrapped)
 
     assert findings == []
 

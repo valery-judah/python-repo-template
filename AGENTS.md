@@ -1,90 +1,29 @@
-# Agent Rules For This Repository
+# Agent Contract
 
-These rules are mandatory for all local development and automation in this repo.
+## Canonical Sources
+- `README.md` - repository overview for the template engine and generated scaffold
+- `pyproject.toml` - template-engine metadata and tool configuration
+- `poe_tasks.toml` - template-engine Python developer task catalog
+- `Makefile` - repo bootstrap and infrastructure wrapper surface
+- `template/` - generated repository payload and its agent-facing defaults
 
-## 1) Instruction Precedence
-When instructions conflict, apply this order:
-1. System/developer instructions
-2. `AGENTS.md`
-3. Task-specific docs and plans
+The repository root files above are canonical for template-engine work. Files under `template/` define the generated project contract and must be updated with the root validation workflow when scaffold behavior changes.
 
-## 2) Mandatory Rules
-### Environment and Commands
-- Use `uv` for all Python-related commands.
-- Do not use `pip`, `python -m pip`, `poetry`, or `pipenv` directly.
-- Prefer `make` targets when available.
-- If a task is not in `Makefile`, run it via `uv run <tool>`.
+## Commands
+- Use `uv` as the Python command entrypoint for this repo.
+- Prefer `uv run poe <task>` for template-engine Python workflows; otherwise use `uv run <tool>`.
+- Do not use `pip`, `python -m pip`, `poetry`, or `pipenv` for repo workflows.
+- Use `make` for repo setup and local infrastructure wrappers defined in [`Makefile`](/Users/val/projects/python-repo-template/Makefile).
+- Common anchors: `uv sync --group dev`, `uv run poe verify`, `uv run poe render-test`, `make install`, `make install-git-hooks`.
+- For the full command catalog and workflow guidance, use [`README.md`](/Users/val/projects/python-repo-template/README.md), [`poe_tasks.toml`](/Users/val/projects/python-repo-template/poe_tasks.toml), and [`Makefile`](/Users/val/projects/python-repo-template/Makefile).
+- To inspect the current command surface directly, use `uv run poe --help` and `make help`.
 
-### Package and Imports
-- Keep `src/` layout as the source of truth.
-- Tests must validate installed-package behavior (no path hacks).
-- Use editable install (`make install`) for local development and test runs.
-- Do not modify `PYTHONPATH` to bypass package behavior.
+## Validation
+- Docs-only change: no mandatory validation; run targeted checks only if docs affect commands or generated artifacts.
+- Template-engine code or config change: `uv run poe verify`
+- Template payload or render-contract change: `uv run poe render-test`
 
-### Dependencies and Lockfile
-- Add/remove dependencies via `pyproject.toml` and `uv` workflows only.
-- Keep `uv.lock` committed and up to date after dependency changes.
-- Do not manually edit `uv.lock`.
-
-### Code Quality
-- Prefer small, focused changes.
-- Add or update tests for behavior changes.
-- Preserve backward compatibility for public API contracts unless explicitly requested.
-- Use type annotations for new/changed Python code.
-- Avoid dead code, commented-out blocks, and broad `except Exception` without justification.
-
-### Safe Git Rules
-- Never revert unrelated user changes.
-- Avoid destructive commands unless explicitly requested.
-- Do not use interactive git flows when non-interactive commands are available.
-
-## 3) Command Policy
-Use these command patterns:
-- Dependency sync: `make sync` (fallback: `uv sync`)
-- Prepare engine env: `make install`
-- Format: `make fmt`
-- Lint: `make lint`
-- Type check: `make type`
-- Tests: `make test`
-- Render validation: `make render-test`
-
-## 4) Task Matrix
-- Docs-only change:
-  - required: no mandatory test run
-  - recommended: run targeted checks only if docs affect generated artifacts
-- Code change (non-API):
-  - required: `make test`
-- API/schema/logic change:
-  - required: `make fmt`, `make lint`, `make type`, `make test`
-  - recommended: `make render-test` when template output or render behavior changes
-  - also update related docs and tests
-
-## 5) Semantic RAG Contract Discipline
-- For retrieval contract changes, update:
-  - chunking/indexing logic
-  - retrieval/ranking logic
-  - tests that cover ranking behavior
-  - relevant docs in `README.md` or `docs/`
-- Keep typed models explicit for document/chunk/query structures.
-- Preserve deterministic behavior in tests (fixed fixtures and stable ordering rules).
-
-## 6) Workflow and Done Criteria
-### Default Workflow
-1. `make sync`
-2. Implement change
-3. Run required checks from the task matrix
-
-### Definition of Done
-1. Code/docs changes are implemented and readable.
-2. Required checks pass for the task type.
-3. New behavior is covered by tests (if behavior changed).
-4. Relevant docs are updated.
-5. No unrelated files are modified.
-
-## Appendix A) Review Mode Contract
-When asked to "review":
-- prioritize findings (bugs, regressions, risks, missing tests)
-- order findings by severity
-- include concrete file/line references
-- keep summary brief and secondary
-- if no findings, state that explicitly and mention residual risks/testing gaps
+## Development Practices
+- Keep template-engine helper scripts in `scripts/`.
+- Keep generated-project source code under `template/src/`.
+- Keep render validation deterministic by updating tests and docs alongside scaffold contract changes.

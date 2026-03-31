@@ -17,18 +17,7 @@ def main(argv: list[str] | None = None) -> int:
         print(__version__)
         return 0
 
-    try:
-        from rich.console import Console  # type: ignore[import-not-found]
-
-        console = Console(
-            force_terminal=False,
-            color_system=None,
-            markup=False,
-            highlight=False,
-        )
-        console.print("{{ package_name }}: OK")
-    except ModuleNotFoundError:
-        print("{{ package_name }}: OK")
+    print("{{ package_name }}: OK")
     return 0
 
 

@@ -78,7 +78,7 @@ def _findings_for_line(path: str, line_number: int, line_text: str) -> list[Secr
     return findings
 
 
-def _scan_text(path: str, text: str) -> list[SecretFinding]:
+def scan_text(path: str, text: str) -> list[SecretFinding]:
     findings: list[SecretFinding] = []
     for line_number, line_text in enumerate(text.splitlines(), start=1):
         findings.extend(_findings_for_line(path=path, line_number=line_number, line_text=line_text))
@@ -105,7 +105,7 @@ def _scan_repo(repo_root: Path) -> list[SecretFinding]:
         content = file_path.read_bytes()
         if b"\0" in content:
             continue
-        findings.extend(_scan_text(path=raw_path, text=content.decode("utf-8", errors="replace")))
+        findings.extend(scan_text(path=raw_path, text=content.decode("utf-8", errors="replace")))
     return findings
 
 

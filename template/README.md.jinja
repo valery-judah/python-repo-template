@@ -1,34 +1,50 @@
 # {{ repo_name }}
 
-One-line description of what this project does.
+Bootstrapable Python project with a clean command model:
+
+- `uv` manages environments and dependencies.
+- `uv run poe <task>` runs Python developer workflows.
+- `make <target>` is reserved for repo setup wrappers.
 
 ## Requirements
 - Python {{ python_version }}+
-- `uv` (recommended)
+- `uv`
 
-## Quickstart
+## Initialize The Repo
 ```bash
 make init
-make test
+uv run poe verify
 ```
 
 ## Run
 ```bash
-make run
+uv run poe run
 ```
 
-## Development
-Common commands (see `Makefile` for the full list):
+## Command Model
+Use Poe for Python work:
 
 ```bash
-make fmt     # auto-format and fix
-make lint    # formatting + lint checks
-make type    # mypy
-make test    # pytest
-make check   # fmt + lint + type + test
+uv run poe fmt
+uv run poe fmt-check
+uv run poe lint
+uv run poe type
+uv run poe test
+uv run poe verify
+uv run poe run
+uv run poe build
+uv run poe clean
 ```
 
-## Secret scanning
+Use `make` for repo setup wrappers:
+
+```bash
+make help
+make init
+make install-git-hooks
+```
+
+## Secret Scanning
 
 This repo includes a local Gemini API key scan for strings that match the format-aware
 `AIza[A-Za-z0-9_-]{35}` pattern. Version 1 scans only Gemini-style keys, has no allowlist, and
@@ -37,7 +53,7 @@ keeps CI `gitleaks` checks as separate defense in depth.
 Run a repo-wide audit of tracked files:
 
 ```bash
-make secret-scan
+uv run poe secret-scan
 ```
 
 Install the repo-managed pre-commit hook:
@@ -52,20 +68,19 @@ lines, full git history, or non-staged working tree changes.
 ## Dependencies
 - Add a runtime dependency: `uv add <package>`
 - Add a dev dependency: `uv add --dev <package>`
-- Generate or refresh lockfile: `make lock`
-- Sync lockfile + env: `make sync`
-- Optional smoke check (adds a small runtime dep): `make add-rich`
+- Sync lockfile + env: `uv sync --group dev`
 
 ## Project layout
 ```text
+scripts/
 src/{{ package_name }}/
 tests/
-docs/
+poe_tasks.toml
 ```
 
 ## Configuration
-- Packaging/config: `pyproject.toml`
-- Tooling: `ruff`, `mypy`, `pytest` (configured in `pyproject.toml`)
+- Packaging and tooling: `pyproject.toml`
+- Python task catalog: `poe_tasks.toml`
 
 ## Contributing
 See `CONTRIBUTING.md`.
