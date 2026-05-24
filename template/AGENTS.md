@@ -1,27 +1,28 @@
 # Agent Contract
 
-## Canonical Sources
-- `README.md` - repository entry point and local workflow overview
-- `pyproject.toml` - package metadata and tool configuration
-- `poe_tasks.toml` - Python developer task catalog
-- `Makefile` - repo bootstrap and future infrastructure wrapper surface
+## Canonical sources
+- `docs/evergreen/mvp.md` - product scope
+- `docs/evergreen/architecture.md` - architecture and current repo shape
+- `docs/evergreen/api-contracts.md` - stable runtime interfaces
+- `docs/evergreen/runbook.md` - local commands and operation
+- `docs/README.md` - docs index
 
-The repository root files above are canonical. This scaffold keeps most developer workflows in Poe and uses `make` for setup wrappers.
+`docs/evergreen/` is canonical. `docs/delivery/` is reference-only. `docs/workstreams/` is history-only.
+
+For now, the `evergreen` directory is empty. We're working on the `docs/product/spec.md` and `docs/product/concepts.md` to build a product base.
 
 ## Commands
 - Use `uv` as the Python command entrypoint for this repo.
 - Prefer `uv run poe <task>` for defined developer workflows; otherwise use `uv run <tool>`.
 - Do not use `pip`, `python -m pip`, `poetry`, `pipenv`, `npm`, or `npx` for repo workflows.
-- Use `make` for repo setup wrappers defined in [`Makefile`](Makefile).
-- Common anchors: `make init`, `uv run poe verify`, `uv run poe run`, `uv run poe build`, `make install-git-hooks`.
-- For the full command catalog and workflow guidance, use [`README.md`](README.md), [`poe_tasks.toml`](poe_tasks.toml), and [`Makefile`](Makefile).
+- Use `make` for local DevEx and infrastructure wrappers such as Docker, Docker Compose, observability stack operations, and docs harness helpers like `make workstream-new type=<work_type> slug=<slug>`, as defined in [`Makefile`](Makefile).
+- Common anchors: `uv sync`, `uv run poe verify`, `uv run poe run-api`, `uv run poe run-worker`, `make docker-up-build`, `make workstream-new type=feature slug=my-feature`.
+- For the full command catalog and operational guidance, use [`docs/evergreen/runbook.md`](docs/evergreen/runbook.md).
 - To inspect the current command surface directly, use `uv run poe --help` and `make help`.
 
 ## Validation
 - Docs-only change: no mandatory validation; run targeted checks only if docs affect commands or generated artifacts.
-- Code or config change: `uv run poe verify`
-- Packaging validation: `uv run poe build`
+- Code change: `uv run poe verify`
 
 ## Development Practices
-- Keep repo-level helper scripts in `scripts/`.
-- Keep Python application code under `src/`.
+- Save any temporary, exploratory, or developer-experience (devex) scripts into the `scripts/devex/` directory.
