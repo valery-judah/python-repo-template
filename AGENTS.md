@@ -7,7 +7,7 @@
 - `docs/evergreen/runbook.md` - local commands and operation
 - `docs/README.md` - docs index
 
-`docs/evergreen/` is canonical. `docs/delivery/` is reference-only. `docs/workstreams/` is history-only.
+`docs/evergreen/` is canonical. `docs/delivery/` is reference-only.
 
 For now, the `evergreen` directory is empty. We're working on the `docs/product/spec.md` and `docs/product/concepts.md` to build a product base.
 

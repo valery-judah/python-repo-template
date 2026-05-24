@@ -49,6 +49,13 @@ include = "poe_tasks.toml"
     _write_text(root / "AGENTS.md", "# Agents\n")
     _write_text(root / "CONTRIBUTING.md", "# Contributing\n")
     _write_text(root / "SECURITY.md", "# Security\n")
+    _write_text(root / "docs" / "README.md", "# Documentation Index\n")
+    _write_text(root / "docs" / "evergreen" / "mvp.md", "# MVP\n")
+    _write_text(root / "docs" / "evergreen" / "architecture.md", "# Architecture\n")
+    _write_text(root / "docs" / "evergreen" / "api-contracts.md", "# API Contracts\n")
+    _write_text(root / "docs" / "evergreen" / "runbook.md", "# Runbook\n")
+    _write_text(root / "docs" / "product" / "spec.md", "# Product Spec\n")
+    _write_text(root / "docs" / "product" / "concepts.md", "# Product Concepts\n")
     _write_text(root / ".githooks" / "pre-commit", "#!/bin/sh\n")
     _write_text(root / "poe_tasks.toml", '[tasks.verify]\ncmd = "pytest"\n')
     _write_text(root / "scripts" / "clean.py", "print('clean')\n")
@@ -96,6 +103,14 @@ def test_init_artifacts_assertion_requires_lockfile(tmp_path: Path) -> None:
 def test_required_files_assertion_rejects_missing_secret_scan(tmp_path: Path) -> None:
     repo = _make_rendered_repo(tmp_path)
     (repo.root / "src" / "sample_app" / "devtools" / "secret_scan.py").unlink()
+
+    with pytest.raises(AssertionError, match="missing required path"):
+        render_validate._assert_required_files(repo)
+
+
+def test_required_files_assertion_rejects_missing_docs_scaffold(tmp_path: Path) -> None:
+    repo = _make_rendered_repo(tmp_path)
+    (repo.root / "docs" / "evergreen" / "runbook.md").unlink()
 
     with pytest.raises(AssertionError, match="missing required path"):
         render_validate._assert_required_files(repo)
