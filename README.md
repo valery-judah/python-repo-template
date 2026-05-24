@@ -90,8 +90,6 @@ uvx copier copy --trust gh:valery-judah/python-repo-template ./my-new-repo \
   --defaults
 ```
 
-Create tags in the template repository with a simple release pattern such as `v0.1.0`, `v0.2.0`, or `v1.0.0`.
-
 To test the template from a local clone before pushing, render from the repo path instead:
 
 ```bash
@@ -118,6 +116,43 @@ Bootstrap the local template-engine environment:
 make install
 ```
 
+## Releasing The Template
+Use the local release helper instead of checking tags manually.
+
+Preview the next tag:
+
+```bash
+uv run poe release patch --dry-run
+```
+
+Create the next local tag:
+
+```bash
+uv run poe release patch
+```
+
+Create the tag and push both the current branch and the tag to `origin`:
+
+```bash
+uv run poe release patch --push
+```
+
+The same command supports `minor` and `major` instead of `patch`.
+
+Release workflow:
+- Run `uv run poe verify` before tagging.
+- Use `uv run poe release patch --dry-run` to confirm the computed tag.
+- Use `uv run poe release patch` to create the tag locally.
+- Use `uv run poe release patch --push` when you want the helper to push both the branch and tag to `origin`.
+- If you need a different remote, pass `--remote <name>`.
+
+Behavior:
+- The helper runs `git fetch --tags <remote>` by default before computing the next version.
+- Only tags matching `vX.Y.Z` are considered for release numbering.
+- `--dry-run` prints the latest tag and next tag without creating anything.
+- `--push` fails on detached `HEAD` instead of guessing which branch to push.
+- `--no-fetch` is available if you intentionally want to work from already-fetched local tags.
+
 Use these commands when working on the template engine and validation fixtures in this repository:
 
 ```bash
@@ -130,6 +165,7 @@ uv run poe render-test-render
 uv run poe render-test-init
 uv run poe render-test
 uv run poe render-test-published
+uv run poe release patch --dry-run
 ```
 
 The render validation is split by depth and source:
@@ -137,6 +173,7 @@ The render validation is split by depth and source:
 - `uv run poe render-test-init`: render plus `make init`, including init artifact checks
 - `uv run poe render-test`: full end-to-end validation of the generated repo commands from the local template snapshot
 - `uv run poe render-test-published`: full end-to-end validation of the latest published GitHub tag; intended for release-path checks rather than day-to-day iteration
+- `uv run poe release patch|minor|major [--dry-run] [--push]`: compute the next semantic tag from git history, create it locally, and optionally push the branch plus tag
 
 You can also run the script directly and select scenarios:
 

@@ -37,6 +37,22 @@ cmd = "python scripts/render_validate.py --mode full-e2e"
 help = "Render fixture repos from the published GitHub template source"
 cmd = "python scripts/render_validate.py --mode full-e2e --template-source published"
 
+[tasks.release]
+help = "Create the next semantic release tag from existing git tags"
+cmd = "python scripts/release.py"
+
+[tasks.release-patch]
+help = "Create the next patch release tag"
+cmd = "python scripts/release.py patch"
+
+[tasks.release-minor]
+help = "Create the next minor release tag"
+cmd = "python scripts/release.py minor"
+
+[tasks.release-major]
+help = "Create the next major release tag"
+cmd = "python scripts/release.py major"
+
 [tasks.secret-scan]
 help = "Scan tracked repository files for leaked Gemini API keys"
 cmd = "python scripts/secret_scan.py --scope repo"
