@@ -11,16 +11,13 @@ permissions:
 jobs:
   validate-release:
     runs-on: ubuntu-latest
-    env:
-      PYTHON_REPO_TEMPLATE_PUBLISHED_SOURCE: "gh:${{ github.repository }}"
-      PYTHON_REPO_TEMPLATE_PUBLISHED_REF: "${{ github.ref_name }}"
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -40,4 +37,7 @@ jobs:
         run: uv run poe render-test
 
       - name: Published render test
+        env:
+          PYTHON_REPO_TEMPLATE_PUBLISHED_SOURCE: "gh:${{ github.repository }}"
+          PYTHON_REPO_TEMPLATE_PUBLISHED_REF: "${{ github.ref_name }}"
         run: uv run poe render-test-published

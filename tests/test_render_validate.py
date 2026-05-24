@@ -225,11 +225,16 @@ def test_resolve_template_render_source_local_uses_snapshot(tmp_path: Path) -> N
 
 
 def test_resolve_template_render_source_published_uses_github_source(tmp_path: Path) -> None:
-    source = render_validate._resolve_template_render_source(
-        "published",
-        base_dir=tmp_path,
-        published_template_source="gh:example/template",
-    )
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.delenv("PYTHON_REPO_TEMPLATE_PUBLISHED_REF", raising=False)
+    try:
+        source = render_validate._resolve_template_render_source(
+            "published",
+            base_dir=tmp_path,
+            published_template_source="gh:example/template",
+        )
+    finally:
+        monkeypatch.undo()
 
     assert source == render_validate.TemplateRenderSource(
         name="published",
