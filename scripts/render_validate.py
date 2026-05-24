@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import os
 import shutil
 import subprocess
 import tempfile
@@ -12,6 +13,7 @@ from pathlib import Path
 from typing import cast
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_PUBLISHED_TEMPLATE_SOURCE = "gh:valery-judah/python-repo-template"
 SNAPSHOT_EXCLUDES = (
     ".git",
     ".venv",
@@ -91,6 +93,15 @@ SCENARIOS_BY_SLUG = {scenario.repo_slug: scenario for scenario in SCENARIOS}
 
 Assertion = Callable[[RenderedRepo], None]
 Command = tuple[str, ...]
+TemplateSourceKind = str
+
+
+@dataclass(frozen=True)
+class TemplateRenderSource:
+    name: str
+    command_prefix: tuple[str, ...]
+    template_src: str
+    cwd: Path
 
 
 @dataclass(frozen=True)
@@ -117,15 +128,36 @@ def _create_source_snapshot(repo_root: Path, base_dir: Path) -> Path:
     return snapshot_root
 
 
-def _render(source_root: Path, dest: Path, scenario: Scenario) -> None:
+def _resolve_template_render_source(
+    source_kind: TemplateSourceKind,
+    *,
+    base_dir: Path,
+    published_template_source: str,
+) -> TemplateRenderSource:
+    if source_kind == "local":
+        source_root = _create_source_snapshot(repo_root=REPO_ROOT, base_dir=base_dir)
+        return TemplateRenderSource(
+            name="local",
+            command_prefix=("uv", "run", "copier", "copy"),
+            template_src=str(source_root),
+            cwd=source_root,
+        )
+    if source_kind == "published":
+        return TemplateRenderSource(
+            name="published",
+            command_prefix=("uvx", "copier", "copy"),
+            template_src=published_template_source,
+            cwd=REPO_ROOT,
+        )
+    raise AssertionError(f"Unsupported template source kind: {source_kind!r}.")
+
+
+def _render(source: TemplateRenderSource, dest: Path, scenario: Scenario) -> None:
     _run(
-        (
-            "uv",
-            "run",
-            "copier",
-            "copy",
+        source.command_prefix
+        + (
             "--trust",
-            str(source_root),
+            source.template_src,
             str(dest),
             "--data",
             f"repo_slug={scenario.repo_slug}",
@@ -133,7 +165,7 @@ def _render(source_root: Path, dest: Path, scenario: Scenario) -> None:
             f"repo_name={scenario.repo_name}",
             "--defaults",
         ),
-        cwd=source_root,
+        cwd=source.cwd,
     )
 
 
@@ -275,6 +307,23 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         metavar="REPO_SLUG",
         help="Limit validation to one or more named scenarios.",
     )
+    parser.add_argument(
+        "--template-source",
+        choices=("local", "published"),
+        default="local",
+        help=(
+            "Choose whether to render from the local repository snapshot "
+            "or the published GitHub template source."
+        ),
+    )
+    parser.add_argument(
+        "--published-template-source",
+        default=os.environ.get(
+            "PYTHON_REPO_TEMPLATE_PUBLISHED_SOURCE",
+            DEFAULT_PUBLISHED_TEMPLATE_SOURCE,
+        ),
+        help="Template source to use for published-source validation.",
+    )
     return parser.parse_args(argv)
 
 
@@ -313,11 +362,22 @@ def _run_validation_mode(mode: ValidationMode, repo: RenderedRepo) -> None:
             init_completed = True
 
 
-def _run_scenario(scenario: Scenario, base_dir: Path, mode: ValidationMode) -> None:
+def _run_scenario(
+    scenario: Scenario,
+    *,
+    base_dir: Path,
+    mode: ValidationMode,
+    template_source_kind: TemplateSourceKind,
+    published_template_source: str,
+) -> None:
     dest = base_dir / scenario.repo_slug
-    source_root = _create_source_snapshot(repo_root=REPO_ROOT, base_dir=base_dir)
-    print(f"==> render {scenario.repo_slug}")
-    _render(source_root=source_root, dest=dest, scenario=scenario)
+    template_source = _resolve_template_render_source(
+        template_source_kind,
+        base_dir=base_dir,
+        published_template_source=published_template_source,
+    )
+    print(f"==> render {scenario.repo_slug} ({template_source.name})")
+    _render(source=template_source, dest=dest, scenario=scenario)
     _init_git_repo(dest=dest)
 
     rendered_repo = RenderedRepo(scenario=scenario, root=dest)
@@ -335,7 +395,13 @@ def main(argv: list[str] | None = None) -> int:
     with tempfile.TemporaryDirectory(prefix="python-repo-template-") as tmp_dir:
         base_dir = Path(tmp_dir)
         for scenario in scenarios:
-            _run_scenario(scenario=scenario, base_dir=base_dir, mode=mode)
+            _run_scenario(
+                scenario=scenario,
+                base_dir=base_dir,
+                mode=mode,
+                template_source_kind=args.template_source,
+                published_template_source=args.published_template_source,
+            )
     return 0
 
 

@@ -33,6 +33,10 @@ cmd = "python scripts/render_validate.py --mode init"
 help = "Render fixture repos and run their end-to-end checks"
 cmd = "python scripts/render_validate.py --mode full-e2e"
 
+[tasks.render-test-published]
+help = "Render fixture repos from the published GitHub template source"
+cmd = "python scripts/render_validate.py --mode full-e2e --template-source published"
+
 [tasks.secret-scan]
 help = "Scan tracked repository files for leaked Gemini API keys"
 cmd = "python scripts/secret_scan.py --scope repo"

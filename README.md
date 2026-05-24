@@ -16,7 +16,7 @@ This repository contains two layers:
 Render a new repository from GitHub:
 
 ```bash
-uvx copier copy --trust gh:<github-user-or-org>/python-repo-template ./my-new-repo \
+uvx copier copy --trust --vcs-ref HEAD gh:<github-user-or-org>/python-repo-template ./my-new-repo \
   --data repo_slug=my-new-repo \
   --defaults
 ```
@@ -72,7 +72,17 @@ Copier renders from the `template/` subdirectory into the destination repository
 `--trust` is required because Copier needs permission to execute this template's helper code in [copier_extensions.py](/Users/val/projects/python-repo-template/copier_extensions.py).
 
 ## Using The Template
-Render from GitHub after committing and pushing template changes:
+Render the current GitHub branch tip:
+
+```bash
+uvx copier copy --trust --vcs-ref HEAD gh:valery-judah/python-repo-template ./my-new-repo \
+  --data repo_slug=my-new-repo \
+  --defaults
+```
+
+Copier defaults to the latest Git tag when the template source is a Git repository. Use `--vcs-ref HEAD` when you want the current branch tip instead of the latest published tag.
+
+Render the latest published release from GitHub:
 
 ```bash
 uvx copier copy --trust gh:valery-judah/python-repo-template ./my-new-repo \
@@ -85,7 +95,7 @@ Create tags in the template repository with a simple release pattern such as `v0
 To test the template from a local clone before pushing, render from the repo path instead:
 
 ```bash
-uvx copier copy --trust /absolute/path/to/python-repo-template ./my-new-repo \
+uvx copier copy --trust --vcs-ref HEAD /absolute/path/to/python-repo-template ./my-new-repo \
   --data repo_slug=my-new-repo \
   --defaults
 ```
@@ -117,19 +127,26 @@ uv run poe verify
 uv run poe render-test-render
 uv run poe render-test-init
 uv run poe render-test
+uv run poe render-test-published
 ```
 
-The render validation is split by depth:
+The render validation is split by depth and source:
 - `uv run poe render-test-render`: render-only assertions for layout, identity, and templated content
 - `uv run poe render-test-init`: render plus `make init`, including init artifact checks
-- `uv run poe render-test`: full end-to-end validation of the generated repo commands
+- `uv run poe render-test`: full end-to-end validation of the generated repo commands from the local template snapshot
+- `uv run poe render-test-published`: full end-to-end validation of the latest published GitHub tag; intended for release-path checks rather than day-to-day iteration
 
 You can also run the script directly and select scenarios:
 
 ```bash
 uv run python scripts/render_validate.py --mode render-only --scenario sample-app
 uv run python scripts/render_validate.py --mode full-e2e
+uv run python scripts/render_validate.py --mode full-e2e --template-source published
 ```
+
+Release validation in GitHub Actions should keep the same contract:
+- PRs and pushes validate the local template snapshot.
+- Tag-triggered release validation additionally runs the published-source check.
 
 Inspect the available command surface directly with:
 

@@ -106,6 +106,8 @@ def test_parse_args_defaults_to_full_e2e() -> None:
 
     assert args.mode == "full-e2e"
     assert args.scenarios is None
+    assert args.template_source == "local"
+    assert args.published_template_source == render_validate.DEFAULT_PUBLISHED_TEMPLATE_SOURCE
 
 
 def test_select_scenarios_rejects_unknown_slug() -> None:
@@ -177,3 +179,46 @@ def test_run_validation_mode_full_e2e_uses_poe_commands(tmp_path: Path) -> None:
         ("command", "uv run poe secret-scan"),
         ("command", "uv run poe build"),
     ]
+
+
+def test_resolve_template_render_source_local_uses_snapshot(tmp_path: Path) -> None:
+    source_root = tmp_path / "_template_source"
+    source_root.mkdir()
+
+    def fake_create_source_snapshot(*, repo_root: Path, base_dir: Path) -> Path:
+        assert repo_root == render_validate.REPO_ROOT
+        assert base_dir == tmp_path
+        return source_root
+
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(render_validate, "_create_source_snapshot", fake_create_source_snapshot)
+    try:
+        source = render_validate._resolve_template_render_source(
+            "local",
+            base_dir=tmp_path,
+            published_template_source="gh:example/template",
+        )
+    finally:
+        monkeypatch.undo()
+
+    assert source == render_validate.TemplateRenderSource(
+        name="local",
+        command_prefix=("uv", "run", "copier", "copy"),
+        template_src=str(source_root),
+        cwd=source_root,
+    )
+
+
+def test_resolve_template_render_source_published_uses_github_source(tmp_path: Path) -> None:
+    source = render_validate._resolve_template_render_source(
+        "published",
+        base_dir=tmp_path,
+        published_template_source="gh:example/template",
+    )
+
+    assert source == render_validate.TemplateRenderSource(
+        name="published",
+        command_prefix=("uvx", "copier", "copy"),
+        template_src="gh:example/template",
+        cwd=render_validate.REPO_ROOT,
+    )
