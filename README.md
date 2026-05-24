@@ -95,10 +95,12 @@ Create tags in the template repository with a simple release pattern such as `v0
 To test the template from a local clone before pushing, render from the repo path instead:
 
 ```bash
-uvx copier copy --trust --vcs-ref HEAD /absolute/path/to/python-repo-template ./my-new-repo \
+uvx copier copy --trust /absolute/path/to/python-repo-template ./my-new-repo \
   --data repo_slug=my-new-repo \
   --defaults
 ```
+
+That path-based form includes uncommitted local template edits. Add `--vcs-ref HEAD` only when you want to render the committed `HEAD` snapshot instead.
 
 Then bootstrap the generated repository:
 

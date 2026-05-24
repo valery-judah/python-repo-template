@@ -222,3 +222,68 @@ def test_resolve_template_render_source_published_uses_github_source(tmp_path: P
         template_src="gh:example/template",
         cwd=render_validate.REPO_ROOT,
     )
+
+
+def test_resolve_template_render_source_published_uses_env_ref(tmp_path: Path) -> None:
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setenv("PYTHON_REPO_TEMPLATE_PUBLISHED_REF", "v9.9.9")
+    try:
+        source = render_validate._resolve_template_render_source(
+            "published",
+            base_dir=tmp_path,
+            published_template_source="gh:example/template",
+        )
+    finally:
+        monkeypatch.undo()
+
+    assert source == render_validate.TemplateRenderSource(
+        name="published",
+        command_prefix=("uvx", "copier", "copy"),
+        template_src="gh:example/template",
+        cwd=render_validate.REPO_ROOT,
+        vcs_ref="v9.9.9",
+    )
+
+
+def test_render_uses_vcs_ref_when_present(tmp_path: Path) -> None:
+    calls: list[tuple[tuple[str, ...], Path]] = []
+    source = render_validate.TemplateRenderSource(
+        name="published",
+        command_prefix=("uvx", "copier", "copy"),
+        template_src="gh:example/template",
+        cwd=render_validate.REPO_ROOT,
+        vcs_ref="v1.2.3",
+    )
+    scenario = render_validate.Scenario(repo_slug="sample-app", repo_name="Sample App")
+    dest = tmp_path / "sample-app"
+
+    def fake_run(command: tuple[str, ...], cwd: Path) -> None:
+        calls.append((command, cwd))
+
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(render_validate, "_run", fake_run)
+    try:
+        render_validate._render(source=source, dest=dest, scenario=scenario)
+    finally:
+        monkeypatch.undo()
+
+    assert calls == [
+        (
+            (
+                "uvx",
+                "copier",
+                "copy",
+                "--trust",
+                "--vcs-ref",
+                "v1.2.3",
+                "gh:example/template",
+                str(dest),
+                "--data",
+                "repo_slug=sample-app",
+                "--data",
+                "repo_name=Sample App",
+                "--defaults",
+            ),
+            render_validate.REPO_ROOT,
+        )
+    ]

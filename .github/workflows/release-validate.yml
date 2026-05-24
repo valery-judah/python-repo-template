@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PYTHON_REPO_TEMPLATE_PUBLISHED_SOURCE: "gh:${{ github.repository }}"
+      PYTHON_REPO_TEMPLATE_PUBLISHED_REF: "${{ github.ref_name }}"
 
     steps:
       - name: Check out repository

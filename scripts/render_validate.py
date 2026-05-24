@@ -14,6 +14,7 @@ from typing import cast
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PUBLISHED_TEMPLATE_SOURCE = "gh:valery-judah/python-repo-template"
+DEFAULT_PUBLISHED_TEMPLATE_REF = ""
 SNAPSHOT_EXCLUDES = (
     ".git",
     ".venv",
@@ -102,6 +103,7 @@ class TemplateRenderSource:
     command_prefix: tuple[str, ...]
     template_src: str
     cwd: Path
+    vcs_ref: str | None = None
 
 
 @dataclass(frozen=True)
@@ -143,20 +145,32 @@ def _resolve_template_render_source(
             cwd=source_root,
         )
     if source_kind == "published":
+        published_vcs_ref = (
+            os.environ.get(
+                "PYTHON_REPO_TEMPLATE_PUBLISHED_REF",
+                DEFAULT_PUBLISHED_TEMPLATE_REF,
+            ).strip()
+            or None
+        )
         return TemplateRenderSource(
             name="published",
             command_prefix=("uvx", "copier", "copy"),
             template_src=published_template_source,
             cwd=REPO_ROOT,
+            vcs_ref=published_vcs_ref,
         )
     raise AssertionError(f"Unsupported template source kind: {source_kind!r}.")
 
 
 def _render(source: TemplateRenderSource, dest: Path, scenario: Scenario) -> None:
+    vcs_ref_args: tuple[str, ...] = ()
+    if source.vcs_ref is not None:
+        vcs_ref_args = ("--vcs-ref", source.vcs_ref)
     _run(
         source.command_prefix
+        + ("--trust",)
+        + vcs_ref_args
         + (
-            "--trust",
             source.template_src,
             str(dest),
             "--data",
