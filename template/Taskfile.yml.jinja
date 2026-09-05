@@ -1,0 +1,97 @@
+version: "3"
+
+tasks:
+  default:
+    desc: Show the task catalog
+    cmds:
+      - task: help
+
+  help:
+    desc: Show the task catalog
+    cmds:
+      - task --list
+
+  repo:sync:
+    desc: Sync development dependencies
+    cmds:
+      - uv sync --group dev {{ '{{.CLI_ARGS}}' }}
+
+  repo:init:
+    desc: Prepare the local development environment
+    cmds:
+      - task: repo:sync
+      - task: repo:hooks
+
+  repo:hooks:
+    desc: Configure git to use repo-managed hooks
+    cmds:
+      - |
+        if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+          git config core.hooksPath .githooks
+        else
+          echo "Not in a git repository. Skipping git hooks setup."
+        fi
+
+  quality:fmt:
+    desc: Format and auto-fix lint issues
+    cmds:
+      - uv run ruff format . {{ '{{.CLI_ARGS}}' }}
+      - uv run ruff check . --fix {{ '{{.CLI_ARGS}}' }}
+
+  quality:fmt:check:
+    desc: Check formatting without modifying files
+    cmds:
+      - uv run ruff format . --check {{ '{{.CLI_ARGS}}' }}
+
+  quality:lint:
+    desc: Run lint checks
+    cmds:
+      - uv run ruff check . {{ '{{.CLI_ARGS}}' }}
+
+  quality:type:
+    desc: Run static type checks
+    cmds:
+      - uv run pyright {{ '{{.CLI_ARGS}}' }}
+
+  quality:test:
+    desc: Run tests
+    cmds:
+      - uv run pytest {{ '{{.CLI_ARGS}}' }}
+
+  quality:verify:
+    desc: Run the read-only verification suite
+    cmds:
+      - task: quality:fmt:check
+      - task: quality:lint
+      - task: quality:type
+      - task: quality:test
+
+  quality:check:
+    desc: Alias for the read-only verification suite
+    cmds:
+      - task: quality:verify
+
+  app:run:
+    desc: Run the demo CLI
+    cmds:
+      - uv run python -m {{ package_name }}.cli {{ '{{.CLI_ARGS}}' }}
+
+  security:scan:
+    desc: Scan tracked repository files for leaked Gemini API keys
+    cmds:
+      - uv run python -m {{ package_name }}.devtools.secret_scan --scope repo {{ '{{.CLI_ARGS}}' }}
+
+  security:scan:staged:
+    desc: Scan staged added lines for leaked Gemini API keys
+    cmds:
+      - uv run python -m {{ package_name }}.devtools.secret_scan --scope staged-added {{ '{{.CLI_ARGS}}' }}
+
+  app:build:
+    desc: Build source and wheel distributions
+    cmds:
+      - uv build {{ '{{.CLI_ARGS}}' }}
+
+  repo:clean:
+    desc: Remove generated local artifacts
+    cmds:
+      - uv run python scripts/clean.py {{ '{{.CLI_ARGS}}' }}

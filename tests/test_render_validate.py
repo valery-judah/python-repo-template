@@ -40,8 +40,7 @@ name = "sample-app"
 [project.scripts]
 sample_app = "sample_app.cli:main"
 
-[tool.poe]
-include = "poe_tasks.toml"
+[tool]
 """.strip()
         + "\n",
     )
@@ -57,7 +56,10 @@ include = "poe_tasks.toml"
     _write_text(root / "docs" / "product" / "spec.md", "# Product Spec\n")
     _write_text(root / "docs" / "product" / "concepts.md", "# Product Concepts\n")
     _write_text(root / ".githooks" / "pre-commit", "#!/bin/sh\n")
-    _write_text(root / "poe_tasks.toml", '[tasks.verify]\ncmd = "pytest"\n')
+    _write_text(
+        root / "Taskfile.yml",
+        'version: "3"\ntasks:\n  quality:verify:\n    cmds: ["uv run pytest"]\n',
+    )
     _write_text(root / "scripts" / "clean.py", "print('clean')\n")
     _write_text(root / "tests" / "test_cli_smoke.py", "from sample_app.cli import main\n")
     _write_text(
@@ -96,7 +98,7 @@ def test_template_reference_assertion_rejects_stale_identity(tmp_path: Path) -> 
 def test_init_artifacts_assertion_requires_lockfile(tmp_path: Path) -> None:
     repo = _make_rendered_repo(tmp_path)
 
-    with pytest.raises(AssertionError, match="make init to create uv.lock"):
+    with pytest.raises(AssertionError, match="task repo:init to create uv.lock"):
         render_validate._assert_init_artifacts(repo)
 
 
@@ -146,7 +148,7 @@ def test_run_validation_mode_runs_init_assertions_after_init_command(tmp_path: P
 
     def fake_run(command: tuple[str, ...], cwd: Path) -> None:
         calls.append(("command", " ".join(command)))
-        if command == ("make", "init"):
+        if command == ("task", "repo:init"):
             (cwd / "uv.lock").write_text("", encoding="utf-8")
 
     monkeypatch = pytest.MonkeyPatch()
@@ -159,12 +161,12 @@ def test_run_validation_mode_runs_init_assertions_after_init_command(tmp_path: P
 
     assert calls == [
         ("assert", "render"),
-        ("command", "make init"),
+        ("command", "task repo:init"),
         ("assert", "init"),
     ]
 
 
-def test_run_validation_mode_full_e2e_uses_poe_commands(tmp_path: Path) -> None:
+def test_run_validation_mode_full_e2e_uses_task_commands(tmp_path: Path) -> None:
     repo = _make_rendered_repo(tmp_path)
     mode = render_validate.VALIDATION_MODES["full-e2e"]
     calls: list[tuple[str, str]] = []
@@ -174,7 +176,7 @@ def test_run_validation_mode_full_e2e_uses_poe_commands(tmp_path: Path) -> None:
 
     def fake_run(command: tuple[str, ...], cwd: Path) -> None:
         calls.append(("command", " ".join(command)))
-        if command == ("make", "init"):
+        if command == ("task", "repo:init"):
             (cwd / "uv.lock").write_text("", encoding="utf-8")
 
     monkeypatch = pytest.MonkeyPatch()
@@ -187,12 +189,12 @@ def test_run_validation_mode_full_e2e_uses_poe_commands(tmp_path: Path) -> None:
 
     assert calls == [
         ("assert", "render"),
-        ("command", "make init"),
+        ("command", "task repo:init"),
         ("assert", "init"),
-        ("command", "uv run poe verify"),
-        ("command", "uv run poe run"),
-        ("command", "uv run poe secret-scan"),
-        ("command", "uv run poe build"),
+        ("command", "task quality:verify"),
+        ("command", "task app:run"),
+        ("command", "task security:scan"),
+        ("command", "task app:build"),
     ]
 
 
@@ -307,3 +309,72 @@ def test_render_uses_vcs_ref_when_present(tmp_path: Path) -> None:
             render_validate.REPO_ROOT,
         )
     ]
+
+
+@pytest.mark.parametrize("name", ["Taskfile.yml"])
+def test_required_files_assertion_requires_taskfile(tmp_path: Path, name: str) -> None:
+    repo = _make_rendered_repo(tmp_path)
+    (repo.root / name).unlink()
+    with pytest.raises(AssertionError, match="missing required path"):
+        render_validate._assert_required_files(repo)
+
+
+@pytest.mark.parametrize("suffix", ["yml", "yaml"])
+def test_template_reference_assertion_checks_yaml(tmp_path: Path, suffix: str) -> None:
+    repo = _make_rendered_repo(tmp_path)
+    _write_text(repo.root / f"bad.{suffix}", "cmd: uv run python -m template.cli\n")
+    with pytest.raises(AssertionError, match="stale template reference"):
+        render_validate._assert_no_hard_coded_template_refs(repo)
+
+
+@pytest.mark.parametrize("name", ["Makefile", "poe_tasks.toml"])
+def test_task_catalog_rejects_legacy_files(tmp_path: Path, name: str) -> None:
+    repo = _make_rendered_repo(tmp_path)
+    _write_text(repo.root / name, "")
+    with pytest.raises(AssertionError, match="legacy workflow file"):
+        render_validate._assert_task_catalog(repo)
+
+
+@pytest.mark.parametrize(
+    "config", ["\n[tool.poe]\n", '\n[dependency-groups]\ndev = ["poethepoet>=0.32"]\n']
+)
+def test_project_metadata_rejects_legacy_configuration(tmp_path: Path, config: str) -> None:
+    repo = _make_rendered_repo(tmp_path)
+    path = repo.root / "pyproject.toml"
+    path.write_text(path.read_text() + config)
+    with pytest.raises(AssertionError, match="legacy"):
+        render_validate._assert_project_metadata(repo)
+
+
+def test_task_catalog_validates_syntax(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    repo = _make_rendered_repo(tmp_path)
+    calls: list[tuple[tuple[str, ...], Path]] = []
+
+    def fake_run(command: tuple[str, ...], cwd: Path) -> None:
+        calls.append((command, cwd))
+
+    monkeypatch.setattr(render_validate, "_run", fake_run)
+    render_validate._assert_task_catalog(repo)
+    assert calls == [(("task", "--list"), repo.root)]
+
+
+@pytest.mark.parametrize("missing", ["uv", "task"])
+def test_main_requires_tools_before_rendering(
+    missing: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fake_which(name: str) -> str | None:
+        return None if name == missing else name
+
+    def unexpected_render(**kwargs: object) -> None:
+        pytest.fail("render started")
+
+    monkeypatch.setattr(render_validate.shutil, "which", fake_which)
+    monkeypatch.setattr(render_validate, "_run_scenario", unexpected_render)
+    with pytest.raises(RuntimeError, match="required to run render validation"):
+        render_validate.main([])
+
+
+def test_init_artifacts_accepts_lockfile(tmp_path: Path) -> None:
+    repo = _make_rendered_repo(tmp_path)
+    _write_text(repo.root / "uv.lock", "version = 1\n")
+    render_validate._assert_init_artifacts(repo)

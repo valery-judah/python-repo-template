@@ -48,13 +48,13 @@ FORBIDDEN_SNIPPETS = (
     'version("template")',
     "python -m template",
 )
-TEXT_FILE_SUFFIXES = {".md", ".py", ".toml", ".txt", ""}
-INIT_COMMANDS = (("make", "init"),)
+TEXT_FILE_SUFFIXES = {".md", ".py", ".toml", ".txt", ".yml", ".yaml", ""}
+INIT_COMMANDS = (("task", "repo:init"),)
 CHECK_COMMANDS = (
-    ("uv", "run", "poe", "verify"),
-    ("uv", "run", "poe", "run"),
-    ("uv", "run", "poe", "secret-scan"),
-    ("uv", "run", "poe", "build"),
+    ("task", "quality:verify"),
+    ("task", "app:run"),
+    ("task", "security:scan"),
+    ("task", "app:build"),
 )
 
 
@@ -194,7 +194,7 @@ def _iter_text_files(root: Path) -> Iterable[Path]:
             continue
         if path.name == "uv.lock":
             continue
-        if path.name == "Makefile" or path.suffix in TEXT_FILE_SUFFIXES:
+        if path.suffix in TEXT_FILE_SUFFIXES:
             yield path
 
 
@@ -225,7 +225,7 @@ def _assert_required_files(repo: RenderedRepo) -> None:
         repo.root / "docs" / "product" / "spec.md",
         repo.root / "docs" / "product" / "concepts.md",
         repo.root / ".githooks" / "pre-commit",
-        repo.root / "poe_tasks.toml",
+        repo.root / "Taskfile.yml",
         repo.root / "scripts" / "clean.py",
         repo.root / "tests" / "test_cli_smoke.py",
         repo.root / "tests" / "test_secret_scan.py",
@@ -263,9 +263,22 @@ def _assert_project_metadata(repo: RenderedRepo) -> None:
             f"Expected console script for {repo.package_name!r}, got {entrypoint!r}."
         )
 
-    poe_config = cast(dict[str, str], tool.get("poe", {}))
-    if poe_config.get("include") != "poe_tasks.toml":
-        raise AssertionError("Expected pyproject to include poe_tasks.toml via [tool.poe].")
+    if "poe" in tool:
+        raise AssertionError("Rendered pyproject contains legacy [tool.poe] configuration.")
+    groups = cast(dict[str, list[str]], pyproject.get("dependency-groups", {}))
+    dependencies = cast(list[str], project.get("dependencies", []))
+    if any(
+        "poethepoet" in dep.lower()
+        for dep in dependencies + [dep for group in groups.values() for dep in group]
+    ):
+        raise AssertionError("Rendered pyproject contains legacy poethepoet dependency.")
+
+
+def _assert_task_catalog(repo: RenderedRepo) -> None:
+    for name in ("Makefile", "makefile", "GNUmakefile", "poe_tasks.toml"):
+        if (repo.root / name).exists():
+            raise AssertionError(f"Rendered repo contains legacy workflow file: {name}")
+    _run(("task", "--list"), cwd=repo.root)
 
 
 def _assert_readme_identity(repo: RenderedRepo) -> None:
@@ -278,7 +291,7 @@ def _assert_readme_identity(repo: RenderedRepo) -> None:
 
 def _assert_init_artifacts(repo: RenderedRepo) -> None:
     if not (repo.root / "uv.lock").is_file():
-        raise AssertionError("Expected make init to create uv.lock.")
+        raise AssertionError("Expected task repo:init to create uv.lock.")
 
 
 ASSERTION_GROUPS: dict[str, tuple[Assertion, ...]] = {
@@ -287,6 +300,7 @@ ASSERTION_GROUPS: dict[str, tuple[Assertion, ...]] = {
         _assert_required_files,
         _assert_no_hard_coded_template_refs,
         _assert_project_metadata,
+        _assert_task_catalog,
         _assert_readme_identity,
     ),
     "init": (_assert_init_artifacts,),
@@ -408,6 +422,9 @@ def _run_scenario(
 def main(argv: list[str] | None = None) -> int:
     if shutil.which("uv") is None:
         raise RuntimeError("uv is required to run render validation.")
+
+    if shutil.which("task") is None:
+        raise RuntimeError("Go Task v3 (task) is required to run render validation.")
 
     args = parse_args(argv)
     mode = VALIDATION_MODES[args.mode]

@@ -2,9 +2,14 @@
 
 set -eu
 
+if ! command -v task >/dev/null 2>&1; then
+  echo "pre-commit requires Go Task v3 (task) on PATH" >&2
+  exit 1
+fi
+
 if ! command -v uv >/dev/null 2>&1; then
   echo "pre-commit secret scan requires 'uv' on PATH" >&2
   exit 1
 fi
 
-uv run poe secret-scan-staged
+task security:scan:staged

@@ -1,13 +1,15 @@
 # Contributing
 
 ## Development setup
+Install `uv` and standalone Go Task v3 as described in [README.md](README.md).
+
 ```bash
-make init
+task repo:init
 ```
 
 ## Quality checks
 ```bash
-uv run poe verify
+task quality:verify
 ```
 
 ## Adding dependencies
@@ -17,4 +19,4 @@ uv run poe verify
 ## Pull requests
 - Keep changes small and focused.
 - Add/update tests for behavior changes.
-- Ensure `uv run poe verify` passes.
+- Ensure `task quality:verify` passes.

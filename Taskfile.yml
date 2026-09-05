@@ -1,0 +1,118 @@
+version: "3"
+
+tasks:
+  default:
+    desc: Show the task catalog
+    cmds:
+      - task: help
+
+  help:
+    desc: Show the task catalog
+    cmds:
+      - task --list
+
+  repo:sync:
+    desc: Sync development dependencies
+    cmds:
+      - uv sync --group dev {{.CLI_ARGS}}
+
+  repo:install:
+    desc: Prepare the local development environment
+    cmds:
+      - task: repo:sync
+      - task: repo:hooks
+
+  repo:hooks:
+    desc: Configure git to use repo-managed hooks
+    cmds:
+      - git config core.hooksPath .githooks
+
+  quality:fmt:
+    desc: Format and auto-fix lint issues
+    cmds:
+      - uv run ruff format . {{.CLI_ARGS}}
+      - uv run ruff check . --fix {{.CLI_ARGS}}
+
+  quality:fmt:check:
+    desc: Check formatting without modifying files
+    cmds:
+      - uv run ruff format . --check {{.CLI_ARGS}}
+
+  quality:lint:
+    desc: Run lint checks
+    cmds:
+      - uv run ruff check . {{.CLI_ARGS}}
+
+  quality:type:
+    desc: Run static type checks
+    cmds:
+      - uv run pyright {{.CLI_ARGS}}
+
+  quality:test:
+    desc: Run template-engine unit tests
+    cmds:
+      - uv run pytest {{.CLI_ARGS}}
+
+  render:only:
+    desc: Render fixture repos and run render-only assertions
+    cmds:
+      - uv run python scripts/render_validate.py --mode render-only {{.CLI_ARGS}}
+
+  render:init:
+    desc: Render fixture repos, run repo init, and verify init artifacts
+    cmds:
+      - uv run python scripts/render_validate.py --mode init {{.CLI_ARGS}}
+
+  render:test:
+    desc: Render fixture repos and run their end-to-end checks
+    cmds:
+      - uv run python scripts/render_validate.py --mode full-e2e {{.CLI_ARGS}}
+
+  render:published:
+    desc: Render fixture repos from the published GitHub template source
+    cmds:
+      - uv run python scripts/render_validate.py --mode full-e2e --template-source published {{.CLI_ARGS}}
+
+  release:create:
+    desc: Create the next semantic release tag from existing git tags
+    cmds:
+      - uv run python scripts/release.py {{.CLI_ARGS}}
+
+  release:patch:
+    desc: Create the next patch release tag
+    cmds:
+      - uv run python scripts/release.py patch {{.CLI_ARGS}}
+
+  release:minor:
+    desc: Create the next minor release tag
+    cmds:
+      - uv run python scripts/release.py minor {{.CLI_ARGS}}
+
+  release:major:
+    desc: Create the next major release tag
+    cmds:
+      - uv run python scripts/release.py major {{.CLI_ARGS}}
+
+  security:scan:
+    desc: Scan tracked repository files for leaked Gemini API keys
+    cmds:
+      - uv run python scripts/secret_scan.py --scope repo {{.CLI_ARGS}}
+
+  security:scan:staged:
+    desc: Scan staged added lines for leaked Gemini API keys
+    cmds:
+      - uv run python scripts/secret_scan.py --scope staged-added {{.CLI_ARGS}}
+
+  quality:verify:
+    desc: Run the read-only verification suite
+    cmds:
+      - task: quality:fmt:check
+      - task: quality:lint
+      - task: quality:type
+      - task: quality:test
+
+  quality:check:
+    desc: Run the full verification and render validation suite
+    cmds:
+      - task: quality:verify
+      - task: render:test

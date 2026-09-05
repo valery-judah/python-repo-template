@@ -1,195 +1,47 @@
 # Python Repo Template
 
-This repository serves two audiences:
-- template consumers who want to generate a new Python repository
-- template maintainers who want to evolve the template itself
+```bash
+uvx copier copy --trust -l -d repo_slug=convert-pdf --vcs-ref HEAD gh:valery-judah/python-repo-template convert-pdf
+cd convert-pdf
+task repo:init
+task quality:verify
+task app:run
+```
 
-This repository contains two layers:
-- the template engine at the repo root
-- the generated Python starter payload under `template/`
+A Python starter with `uv`, Go Task, tests, and an [agent contract](template/AGENTS.md).
+The command above uses the current GitHub branch tip. Omit `--vcs-ref HEAD` to use the latest release once it includes the Task migration.
 
-## Requirements
-- Python 3.11+
-- `uv`
+## Prerequisites
 
-## Quickstart
-Render a new repository from GitHub:
+Python 3.11+, [uv](https://docs.astral.sh/uv/getting-started/installation/), and [Go Task v3](https://taskfile.dev/docs/installation) must be available on PATH.
+Install Task with `brew install go-task` on macOS or `winget install Task.Task` on Windows; see the linked instructions for Linux.
+
+## Customization
+
+Pass the project slug with `-d repo_slug=another-name`. `-l` accepts the remaining defaults; omit it for prompts.
+See [copier.yml](copier.yml) for all inputs and defaults.
+`--trust` allows Copier to execute template tasks, including Git initialization.
+
+For local development, replace the GitHub source with the path to your clone and keep `--vcs-ref HEAD` to include uncommitted edits.
+
+## Workflows
+
+Run `task` to list available workflows. Pass arguments after `--`, for example:
 
 ```bash
-uvx copier copy --trust --vcs-ref HEAD gh:<github-user-or-org>/python-repo-template ./my-new-repo \
-  --data repo_slug=my-new-repo \
-  --defaults
+task quality:test -- -k "smoke or cli"
 ```
 
-Bootstrap the generated repository:
+The [root Taskfile](Taskfile.yml) defines template maintenance workflows; the [generated Taskfile](template/Taskfile.yml.jinja) defines project workflows.
+
+## Maintaining the template
+
+Edit [template/](template/) to change generated projects. Set up and validate the template repository with:
 
 ```bash
-cd my-new-repo
-make init
-uv run poe verify
-uv run poe run
+task repo:install
+task quality:check
 ```
 
-Example: `repo_slug=my-new-repo` produces a package named `my_new_repo`.
-
-## What This Template Provides
-This template is an opinionated starting point for Python projects that are developed with coding agents as well as humans.
-
-It provides three things out of the box:
-
-- agent operating context via `AGENTS.md`
-- a command model built around `uv`, `poe`, and thin `make` wrappers
-- a minimal Python project baseline built around `uv`, `src/`, tests, and a `Makefile`
-
-`AGENTS.md` establishes repository-specific rules, command policy, workflow expectations, and done criteria. That gives coding agents a fixed contract for how to work in the repository instead of relying on ad hoc instructions in each session.
-
-Python workflows live in Poe and run through `uv run poe <task>`. `make` remains available for repo setup and local wrapper commands such as `make install` and `make install-git-hooks`.
-
-The generated project also includes a basic Python repository structure that is ready to extend rather than reinvent. The goal is not only to scaffold files, but to create a repository with a predefined execution model: agents know how to operate, contributors know which commands matter, and automation can enforce the same checks everywhere.
-
-## Layout
-```text
-copier.yml
-copier_extensions.py
-scripts/
-template/
-  pyproject.toml.jinja
-  Makefile.jinja
-  poe_tasks.toml.jinja
-  scripts/
-  src/
-  tests/
-```
-
-Copier renders from the `template/` subdirectory into the destination repository root. The root-level files in this repo are for the template engine and validation workflow.
-
-## Template Inputs
-- `repo_slug`: repository directory and slug, for example `my-new-repo`
-- `repo_name`: human-readable project name; defaults to `repo_slug`
-- `python_version`: supported Python version; defaults to `3.11`
-- `package_name`: derived automatically from `repo_slug`, for example `my_new_repo`
-
-`--trust` is required because Copier needs permission to execute this template's helper code in [copier_extensions.py](/Users/val/projects/python-repo-template/copier_extensions.py).
-
-## Using The Template
-Render the current GitHub branch tip:
-
-```bash
-uvx copier copy --trust --vcs-ref HEAD gh:valery-judah/python-repo-template ./my-new-repo \
-  --data repo_slug=my-new-repo \
-  --defaults
-```
-
-Copier defaults to the latest Git tag when the template source is a Git repository. Use `--vcs-ref HEAD` when you want the current branch tip instead of the latest published tag.
-
-Render the latest published release from GitHub:
-
-```bash
-uvx copier copy --trust gh:valery-judah/python-repo-template ./my-new-repo \
-  --data repo_slug=my-new-repo \
-  --defaults
-```
-
-To test the template from a local clone before pushing, render from the repo path instead:
-
-```bash
-uvx copier copy --trust /absolute/path/to/python-repo-template ./my-new-repo \
-  --data repo_slug=my-new-repo \
-  --defaults
-```
-
-That path-based form includes uncommitted local template edits. Add `--vcs-ref HEAD` only when you want to render the committed `HEAD` snapshot instead.
-
-Then bootstrap the generated repository:
-
-```bash
-cd my-new-repo
-make init
-uv run poe verify
-uv run poe run
-```
-
-## Maintaining The Template
-Bootstrap the local template-engine environment:
-
-```bash
-make install
-```
-
-## Releasing The Template
-Use the local release helper instead of checking tags manually.
-
-Preview the next tag:
-
-```bash
-uv run poe release patch --dry-run
-```
-
-Create the next local tag:
-
-```bash
-uv run poe release patch
-```
-
-Create the tag and push both the current branch and the tag to `origin`:
-
-```bash
-uv run poe release patch --push
-```
-
-The same command supports `minor` and `major` instead of `patch`.
-
-Release workflow:
-- Run `uv run poe verify` before tagging.
-- Use `uv run poe release patch --dry-run` to confirm the computed tag.
-- Use `uv run poe release patch` to create the tag locally.
-- Use `uv run poe release patch --push` when you want the helper to push both the branch and tag to `origin`.
-- If you need a different remote, pass `--remote <name>`.
-
-Behavior:
-- The helper runs `git fetch --tags <remote>` by default before computing the next version.
-- Only tags matching `vX.Y.Z` are considered for release numbering.
-- `--dry-run` prints the latest tag and next tag without creating anything.
-- `--push` fails on detached `HEAD` instead of guessing which branch to push.
-- `--no-fetch` is available if you intentionally want to work from already-fetched local tags.
-
-Use these commands when working on the template engine and validation fixtures in this repository:
-
-```bash
-uv run poe fmt
-uv run poe lint
-uv run poe type
-uv run poe test
-uv run poe verify
-uv run poe render-test-render
-uv run poe render-test-init
-uv run poe render-test
-uv run poe render-test-published
-uv run poe release patch --dry-run
-```
-
-The render validation is split by depth and source:
-- `uv run poe render-test-render`: render-only assertions for layout, identity, and templated content
-- `uv run poe render-test-init`: render plus `make init`, including init artifact checks
-- `uv run poe render-test`: full end-to-end validation of the generated repo commands from the local template snapshot
-- `uv run poe render-test-published`: full end-to-end validation of the latest published GitHub tag; intended for release-path checks rather than day-to-day iteration
-- `uv run poe release patch|minor|major [--dry-run] [--push]`: compute the next semantic tag from git history, create it locally, and optionally push the branch plus tag
-
-You can also run the script directly and select scenarios:
-
-```bash
-uv run python scripts/render_validate.py --mode render-only --scenario sample-app
-uv run python scripts/render_validate.py --mode full-e2e
-uv run python scripts/render_validate.py --mode full-e2e --template-source published
-```
-
-Release validation in GitHub Actions should keep the same contract:
-- PRs and pushes validate the local template snapshot.
-- Tag-triggered release validation additionally runs the published-source check.
-
-Inspect the available command surface directly with:
-
-```bash
-uv run poe --help
-make help
-```
+Before releasing, preview the next tag with `task release:create -- patch --dry-run`.
+For release options, run `task release:create -- --help`.

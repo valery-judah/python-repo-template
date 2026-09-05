@@ -3,46 +3,73 @@
 Bootstrapable Python project with a clean command model:
 
 - `uv` manages environments and dependencies.
-- `uv run poe <task>` runs Python developer workflows.
-- `make <target>` is reserved for repo setup wrappers.
+- `task <name>` runs all developer workflows and setup commands.
 
 ## Requirements
 - Python {{ python_version }}+
 - `uv`
+- Go Task v3 as a standalone executable (validated with 3.53.1)
+
+Install Task with `brew install go-task` on macOS or `winget install Task.Task` on Windows.
+For Linux and other installation methods, see the [native installation instructions](https://taskfile.dev/docs/installation).
+Install `uv` using its [installation instructions](https://docs.astral.sh/uv/getting-started/installation/).
+Confirm both executables are on PATH with `task --version` and `uv --version`.
 
 ## Initialize The Repo
 ```bash
-make init
-uv run poe verify
+task repo:init
+task quality:verify
 ```
 
 ## Run
 ```bash
-uv run poe run
+task app:run
 ```
+
+## Task namespaces
+
+| Namespace | Workflows |
+| --- | --- |
+| `repo:*` | Dependency sync, environment setup, Git hooks, and cleanup |
+| `quality:*` | Formatting, linting, types, tests, verification, and full checks |
+| `security:*` | Repository and staged secret scans |
+| `app:*` | Run and build the generated application |
+
+Use `task help` to list the commands available in the current repository.
+Arguments still go after `--`, for example `task quality:test -- -k "smoke or cli"`.
 
 ## Command Model
-Use Poe for Python work:
+Use Task for developer workflows:
 
 ```bash
-uv run poe fmt
-uv run poe fmt-check
-uv run poe lint
-uv run poe type
-uv run poe test
-uv run poe verify
-uv run poe run
-uv run poe build
-uv run poe clean
+task quality:fmt
+task quality:fmt:check
+task quality:lint
+task quality:type
+task quality:test
+task quality:verify
+task app:run
+task app:build
+task repo:clean
 ```
 
-Use `make` for repo setup wrappers:
+Use Task for setup and the command catalog:
 
 ```bash
-make help
-make init
-make install-git-hooks
+task help
+task repo:init
+task repo:hooks
 ```
+
+Pass command arguments after `--`, preserving shell quotes:
+
+```bash
+task quality:test -- -k "smoke or cli"
+```
+
+Bare `task` and `task help` list the available workflows. Composite tasks run sequentially and stop on failure.
+
+`task quality:check` runs `task quality:verify`.
 
 ## Secret Scanning
 
@@ -53,13 +80,13 @@ keeps CI `gitleaks` checks as separate defense in depth.
 Run a repo-wide audit of tracked files:
 
 ```bash
-uv run poe secret-scan
+task security:scan
 ```
 
 Install the repo-managed pre-commit hook:
 
 ```bash
-make install-git-hooks
+task repo:hooks
 ```
 
 After installation, each commit scans staged added lines only. It does not scan unchanged old
@@ -76,12 +103,12 @@ docs/
 scripts/
 src/{{ package_name }}/
 tests/
-poe_tasks.toml
+Taskfile.yml
 ```
 
 ## Configuration
 - Packaging and tooling: `pyproject.toml`
-- Python task catalog: `poe_tasks.toml`
+- Workflow task catalog: `Taskfile.yml`
 - Canonical docs scaffold: `docs/`
 
 ## Contributing
