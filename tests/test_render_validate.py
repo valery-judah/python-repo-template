@@ -301,8 +301,6 @@ def test_render_uses_vcs_ref_when_present(tmp_path: Path) -> None:
                 "gh:example/template",
                 str(dest),
                 "--data",
-                "repo_slug=sample-app",
-                "--data",
                 "repo_name=Sample App",
                 "--defaults",
             ),

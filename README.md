@@ -1,7 +1,7 @@
 # Python Repo Template
 
 ```bash
-uvx copier copy --trust -l -d repo_slug=convert-pdf --vcs-ref HEAD gh:valery-judah/python-repo-template convert-pdf
+uvx copier copy --trust -l --vcs-ref HEAD gh:valery-judah/python-repo-template convert-pdf
 cd convert-pdf
 task repo:init
 task quality:verify
@@ -9,7 +9,7 @@ task app:run
 ```
 
 A Python starter with `uv`, Go Task, tests, and an [agent contract](template/AGENTS.md).
-The command above uses the current GitHub branch tip. Omit `--vcs-ref HEAD` to use the latest release once it includes the Task migration.
+The command above uses the current GitHub branch tip. Omit `--vcs-ref HEAD` to use the latest release once it includes these changes.
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@ Install Task with `brew install go-task` on macOS or `winget install Task.Task` 
 
 ## Customization
 
-Pass the project slug with `-d repo_slug=another-name`. `-l` accepts the remaining defaults; omit it for prompts.
+The destination folder supplies the project slug. `-l` accepts defaults; omit it for prompts or pass `-d repo_slug=another-name` to override the slug.
 See [copier.yml](copier.yml) for all inputs and defaults.
 `--trust` allows Copier to execute template tasks, including Git initialization.
 

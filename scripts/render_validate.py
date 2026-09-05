@@ -174,8 +174,6 @@ def _render(source: TemplateRenderSource, dest: Path, scenario: Scenario) -> Non
             source.template_src,
             str(dest),
             "--data",
-            f"repo_slug={scenario.repo_slug}",
-            "--data",
             f"repo_name={scenario.repo_name}",
             "--defaults",
         ),
