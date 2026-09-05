@@ -173,6 +173,9 @@ def test_check_runs_verification_before_rendering(workflow: tuple[Path, bool]) -
 def test_setup_syncs_before_installing_hooks(workflow: tuple[Path, bool]) -> None:
     root, generated = workflow
     env = _stub_tools(root)
+    home = root / "home"
+    (home / "agent-docs").mkdir(parents=True)
+    env["HOME"] = str(home)
     result = _task(root, env, "repo:init" if generated else "repo:install")
     assert result.returncode == 0, result.stderr
     expected = [["sync", "--group", "dev"]]
@@ -180,3 +183,57 @@ def test_setup_syncs_before_installing_hooks(workflow: tuple[Path, bool]) -> Non
         expected.append(["rev-parse", "--is-inside-work-tree"])
     expected.append(["config", "core.hooksPath", ".githooks"])
     assert _commands(root) == expected
+    if generated:
+        assert (root / "agent-docs").readlink() == home / "agent-docs"
+
+
+@pytest.mark.parametrize("existing", ["none", "directory", "file", "symlink", "dangling"])
+def test_shared_agent_docs_link(workflow: tuple[Path, bool], existing: str, tmp_path: Path) -> None:
+    root, generated = workflow
+    if not generated:
+        pytest.skip("Shared docs are linked only in generated projects")
+    home = tmp_path / "home with spaces"
+    shared = home / "agent-docs"
+    shared.mkdir(parents=True)
+    (shared / "guide.md").write_text("shared docs")
+    link = root / "agent-docs"
+    other = tmp_path / "other-docs"
+    if existing == "directory":
+        link.mkdir()
+    elif existing == "file":
+        link.write_text("keep me")
+    elif existing in {"symlink", "dangling"}:
+        if existing == "symlink":
+            other.mkdir()
+        link.symlink_to(other)
+    env = {**os.environ, "HOME": str(home)}
+    for _ in range(2):
+        result = _task(root, env, "repo:agent-docs")
+        assert result.returncode == 0, result.stderr
+    if existing == "none":
+        assert link.readlink() == shared
+        assert (link / "guide.md").read_text() == "shared docs"
+    elif existing == "directory":
+        assert link.is_dir() and not link.is_symlink()
+        assert list(link.iterdir()) == []
+    elif existing == "file":
+        assert link.read_text() == "keep me"
+    else:
+        assert link.readlink() == other
+    assert (shared / "guide.md").read_text() == "shared docs"
+
+
+def test_missing_shared_docs_can_be_linked_later(workflow: tuple[Path, bool]) -> None:
+    root, generated = workflow
+    if not generated:
+        pytest.skip("Shared docs are linked only in generated projects")
+    home = root / "home"
+    env = {**os.environ, "HOME": str(home)}
+    result = _task(root, env, "repo:agent-docs")
+    assert result.returncode == 0, result.stderr
+    assert "Skipping link" in result.stdout
+    assert not (root / "agent-docs").is_symlink()
+    (home / "agent-docs").mkdir(parents=True)
+    result = _task(root, env, "repo:agent-docs")
+    assert result.returncode == 0, result.stderr
+    assert (root / "agent-docs").readlink() == home / "agent-docs"

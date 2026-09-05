@@ -35,6 +35,8 @@ newrepo ~/projects/convert-pdf
 `newrepo` uses this clone, including uncommitted edits, and runs `task repo:init`.
 The destination must not already exist. Keep the clone in place: the command links to [its launcher](scripts/devex/newrepo).
 
+Initialization also links `agent-docs` to `~/agent-docs` when that directory exists, providing a way to share Markdown files across projects without installing them as skills.
+
 ## Workflows
 
 Run `task` to list available workflows. Pass arguments after `--`, for example:

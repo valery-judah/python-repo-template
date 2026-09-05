@@ -21,6 +21,19 @@ tasks:
     cmds:
       - task: repo:sync
       - task: repo:hooks
+      - task: repo:agent-docs
+
+  repo:agent-docs:
+    desc: Link the shared ~/agent-docs directory into this repository
+    cmds:
+      - |
+        if [ -e agent-docs ] || [ -L agent-docs ]; then
+          echo "Keeping existing agent-docs entry."
+        elif [ -d "$HOME/agent-docs" ]; then
+          ln -s "$HOME/agent-docs" agent-docs
+        else
+          echo "No shared ~/agent-docs directory. Skipping link."
+        fi
 
   repo:hooks:
     desc: Configure git to use repo-managed hooks

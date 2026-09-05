@@ -21,6 +21,10 @@ task repo:init
 task quality:verify
 ```
 
+Initialization links `agent-docs` to `~/agent-docs` if that shared directory exists.
+This is one way to share Markdown files across projects without installing them as skills.
+The link stays out of Git; existing entries are preserved. Run `task repo:agent-docs` to retry linking later.
+
 ## Run
 ```bash
 task app:run

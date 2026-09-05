@@ -27,6 +27,7 @@ htmlcov/
 pyright_output.json
 
 # Local environment files
+/agent-docs
 .env
 .env.*
 !.env.example
