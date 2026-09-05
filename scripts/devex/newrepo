@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+fail() {
+  printf 'newrepo: %s\n' "$*" >&2
+  exit 1
+}
+
+script_path=${BASH_SOURCE[0]}
+while [ -L "$script_path" ]; do
+  script_dir=$(cd -P -- "$(dirname -- "$script_path")" && pwd)
+  script_path=$(readlink "$script_path")
+  case "$script_path" in
+    /*) ;;
+    *) script_path=$script_dir/$script_path ;;
+  esac
+done
+script_dir=$(cd -P -- "$(dirname -- "$script_path")" && pwd)
+script_path=$script_dir/$(basename -- "$script_path")
+template_root=$(cd -- "$script_dir/../.." && pwd)
+
+if [ "$#" -eq 1 ] && [ "$1" = --register ]; then
+  bin_dir=$HOME/.local/bin
+  launcher=$bin_dir/newrepo
+  mkdir -p -- "$bin_dir"
+  if [ -L "$launcher" ] && [ "$(readlink "$launcher")" = "$script_path" ]; then
+    printf 'Already registered: %s\n' "$launcher"
+  elif [ -e "$launcher" ] || [ -L "$launcher" ]; then
+    fail "Refusing to replace $launcher. Move it aside before registering."
+  else
+    ln -s -- "$script_path" "$launcher"
+    printf 'Registered: %s\n' "$launcher"
+  fi
+  case ":$PATH:" in
+    *":$bin_dir:"*) ;;
+    *) printf 'Add this to your shell startup file, then open a new terminal:\n  export PATH="$HOME/.local/bin:$PATH"\n' ;;
+  esac
+  exit 0
+fi
+
+if [ "$#" -eq 1 ] && { [ "$1" = --help ] || [ "$1" = -h ]; }; then
+  printf 'Usage: newrepo <destination>\n\nCreate and initialize a Python repository from the local template clone.\nUse a folder name or path; the destination must not already exist.\n'
+  exit 0
+fi
+[ "$#" -eq 1 ] && [ -n "$1" ] || fail 'Usage: newrepo <destination>'
+for executable in uvx task git; do
+  command -v "$executable" >/dev/null 2>&1 || fail "Missing required executable: $executable"
+done
+[ -f "$template_root/copier.yml" ] || fail "Template clone not found at $template_root"
+
+case "$1" in
+  /*) destination=$1 ;;
+  *) destination=$PWD/$1 ;;
+esac
+# A trailing slash must not hide an existing symlink.
+while [ "$destination" != / ] && [ "${destination%/}" != "$destination" ]; do
+  destination=${destination%/}
+done
+[ ! -e "$destination" ] && [ ! -L "$destination" ] || fail "Destination already exists: $destination"
+mkdir -p -- "$(dirname -- "$destination")"
+# Reserve the final directory atomically so a concurrent invocation cannot overwrite it.
+mkdir -- "$destination" || fail "Cannot create destination: $destination"
+destination=$(cd -- "$destination" && pwd)
+trap 'printf "newrepo: Initialization failed; files remain in %s\n" "$destination" >&2' ERR
+uvx copier copy --trust -l --vcs-ref HEAD "$template_root" "$destination"
+(
+  cd -- "$destination"
+  task repo:init
+)
+printf '\nCreated %s\nNext: cd %q\n' "$destination" "$destination"

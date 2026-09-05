@@ -27,6 +27,11 @@ tasks:
     cmds:
       - git config core.hooksPath .githooks
 
+  repo:register:
+    desc: Register the newrepo launcher in ~/.local/bin
+    cmds:
+      - bash scripts/devex/newrepo --register
+
   quality:fmt:
     desc: Format and auto-fix lint issues
     cmds:

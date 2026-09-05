@@ -24,6 +24,17 @@ See [copier.yml](copier.yml) for all inputs and defaults.
 
 For local development, replace the GitHub source with the path to your clone and keep `--vcs-ref HEAD` to include uncommitted edits.
 
+## From a local clone
+
+On macOS or Linux, run `task repo:register` once in this clone. Then create a project from any directory:
+
+```bash
+newrepo ~/projects/convert-pdf
+```
+
+`newrepo` uses this clone, including uncommitted edits, and runs `task repo:init`.
+The destination must not already exist. Keep the clone in place: the command links to [its launcher](scripts/devex/newrepo).
+
 ## Workflows
 
 Run `task` to list available workflows. Pass arguments after `--`, for example:
