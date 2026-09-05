@@ -78,26 +78,6 @@ tasks:
     cmds:
       - uv run python scripts/render_validate.py --mode full-e2e --template-source published {{.CLI_ARGS}}
 
-  release:create:
-    desc: Create the next semantic release tag from existing git tags
-    cmds:
-      - uv run python scripts/release.py {{.CLI_ARGS}}
-
-  release:patch:
-    desc: Create the next patch release tag
-    cmds:
-      - uv run python scripts/release.py patch {{.CLI_ARGS}}
-
-  release:minor:
-    desc: Create the next minor release tag
-    cmds:
-      - uv run python scripts/release.py minor {{.CLI_ARGS}}
-
-  release:major:
-    desc: Create the next major release tag
-    cmds:
-      - uv run python scripts/release.py major {{.CLI_ARGS}}
-
   security:scan:
     desc: Scan tracked repository files for leaked Gemini API keys
     cmds:

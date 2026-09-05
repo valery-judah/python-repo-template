@@ -56,5 +56,19 @@ task repo:install
 task quality:check
 ```
 
-Before releasing, preview the next tag with `task release:create -- patch --dry-run`.
-For release options, run `task release:create -- --help`.
+To release, run `task quality:check` on the commit you want to tag, then inspect existing tags:
+
+```bash
+git fetch origin --tags
+git tag --list 'v*' --sort=-version:refname
+```
+
+Choose the next version and replace `vX.Y.Z` below with it:
+
+```bash
+git tag vX.Y.Z
+git push origin vX.Y.Z
+```
+
+Pushing the tag starts the release validation workflow, which checks the tagged template
+locally and from GitHub. Validation runs after publication; a failed check leaves the tag available.
