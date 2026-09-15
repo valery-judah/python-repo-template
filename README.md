@@ -1,8 +1,20 @@
 # Python Repo Template
 
+Replace `convert-pdf` with your repo name, then copy and run this command:
+
 ```bash
 uvx copier copy --trust -l --vcs-ref HEAD gh:valery-judah/python-repo-template convert-pdf
+```
+
+Enter the new folder using the same repo name:
+
+```bash
 cd convert-pdf
+```
+
+Initialize, verify, and run the project:
+
+```bash
 task repo:init
 task quality:verify
 task app:run
@@ -35,7 +47,38 @@ newrepo ~/projects/convert-pdf
 `newrepo` uses this clone, including uncommitted edits, and runs `task repo:init`.
 The destination must not already exist. Keep the clone in place: the command links to [its launcher](scripts/devex/newrepo).
 
-Initialization also links `agent-docs` to `~/agent-docs` when that directory exists, providing a way to share Markdown files across projects without installing them as skills.
+## Optional shared agent docs
+
+On macOS or Linux, clone the shared Markdown repository into your home directory once, before initializing a project:
+
+```bash
+git clone https://github.com/valery-judah/agent-docs.git ~/agent-docs
+```
+
+If `~/agent-docs` already exists, use the existing clone instead.
+In generated projects, `task repo:init` creates an `agent-docs` symlink to that directory.
+The link stays out of Git, and existing project entries are preserved.
+This shares the files across projects without installing them as skills.
+
+If you clone it after initializing a project, run this from the generated project directory:
+
+```bash
+task repo:agent-docs
+```
+
+You can also keep the clone elsewhere. For example:
+
+```bash
+git clone https://github.com/valery-judah/agent-docs.git ~/projects/agent-docs
+```
+
+Choose an existing parent directory. Then, from the generated project directory, create the link using the clone's path, provided no `agent-docs` entry exists:
+
+```bash
+ln -s ~/projects/agent-docs agent-docs
+```
+
+Later initialization preserves this link.
 
 ## Workflows
 

@@ -21,9 +21,38 @@ task repo:init
 task quality:verify
 ```
 
-Initialization links `agent-docs` to `~/agent-docs` if that shared directory exists.
-This is one way to share Markdown files across projects without installing them as skills.
-The link stays out of Git; existing entries are preserved. Run `task repo:agent-docs` to retry linking later.
+## Optional shared agent docs
+
+On macOS or Linux, clone the shared Markdown repository into your home directory once:
+
+```bash
+git clone https://github.com/valery-judah/agent-docs.git ~/agent-docs
+```
+
+If `~/agent-docs` already exists, use the existing clone instead.
+`task repo:init` creates an `agent-docs` symlink to that directory when it exists.
+The link stays out of Git, and existing project entries are preserved.
+This shares the files across projects without installing them as skills.
+
+If you clone it after initializing this project, run this from the project directory:
+
+```bash
+task repo:agent-docs
+```
+
+You can also keep the clone elsewhere. For example:
+
+```bash
+git clone https://github.com/valery-judah/agent-docs.git ~/projects/agent-docs
+```
+
+Choose an existing parent directory. Then, from this project directory, create the link using the clone's path, provided no `agent-docs` entry exists:
+
+```bash
+ln -s ~/projects/agent-docs agent-docs
+```
+
+Later initialization preserves this link.
 
 ## Run
 ```bash
