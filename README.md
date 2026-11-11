@@ -1,95 +1,44 @@
 # Python Repo Template
 
-Replace `convert-pdf` with your repo name, then copy and run this command:
+A [Copier](https://copier.readthedocs.io/) template for Python projects with `uv`, Go Task, tests, and an [agent contract](template/AGENTS.md.jinja).
+
+## Prerequisites
+
+Python 3.11+, [uv](https://docs.astral.sh/uv/getting-started/installation/), and [Go Task v3](https://taskfile.dev/docs/installation) on PATH.
+
+## Create a project
+
+Replace `convert-pdf` with your repo name:
 
 ```bash
 uvx copier copy --trust -l --vcs-ref HEAD gh:valery-judah/python-repo-template convert-pdf
-```
-
-Enter the new folder using the same repo name:
-
-```bash
 cd convert-pdf
-```
-
-Initialize, verify, and run the project:
-
-```bash
 task repo:init
 task quality:verify
 task app:run
 ```
 
-A Python starter with `uv`, Go Task, tests, and an [agent contract](template/AGENTS.md.jinja).
-The command above uses the current GitHub branch tip. Omit `--vcs-ref HEAD` to use the latest release once it includes these changes.
+The generated project's [README](template/README.md.jinja) and [runbook](template/docs/evergreen/runbook.md) cover its workflows.
 
-## Prerequisites
+## Main commands
 
-Python 3.11+, [uv](https://docs.astral.sh/uv/getting-started/installation/), and [Go Task v3](https://taskfile.dev/docs/installation) must be available on PATH.
-Install Task with `brew install go-task` on macOS or `winget install Task.Task` on Windows; see the linked instructions for Linux.
+For working on this template repository:
 
-## Customization
+| Command | Purpose |
+| --- | --- |
+| `task` | List all workflows |
+| `task repo:install` | Set up the development environment |
+| `task quality:verify` | Format check, lint, types, and unit tests |
+| `task render:test` | Render fixture projects and run their checks |
+| `task quality:check` | Run both of the above |
+| `task repo:register` | Install the `newrepo` launcher in `~/.local/bin` |
 
-The destination folder supplies the project slug. `-l` accepts defaults; omit it for prompts or pass `-d repo_slug=another-name` to override the slug.
-See [copier.yml](copier.yml) for all inputs and defaults.
-`--trust` allows Copier to execute template tasks, including Git initialization.
+## More
 
-For local development, replace the GitHub source with the path to your clone and keep `--vcs-ref HEAD` to include uncommitted edits.
+The [runbook](docs/runbook.md) covers:
 
-## From a local clone
-
-On macOS or Linux, run `task repo:register` once in this clone. Then create a project from any directory:
-
-```bash
-newrepo ~/projects/convert-pdf
-```
-
-`newrepo` uses this clone, including uncommitted edits, and runs `task repo:init`.
-The destination must not already exist. Keep the clone in place: the command links to [its launcher](scripts/devex/newrepo).
-
-## Optional shared agent docs
-
-On macOS or Linux, clone the shared Markdown repository into your home directory once, before initializing a project:
-
-```bash
-git clone https://github.com/valery-judah/agent-docs.git ~/agent-docs
-```
-
-In generated projects, `task repo:init` links it as `agent-docs`, kept out of Git.
-To link it later or keep the clone elsewhere, see [Shared agent docs](template/docs/evergreen/runbook.md#shared-agent-docs) in the generated runbook.
-
-## Workflows
-
-Run `task` to list available workflows. Pass arguments after `--`, for example:
-
-```bash
-task quality:test -- -k "smoke or cli"
-```
-
-The [root Taskfile](Taskfile.yml) defines template maintenance workflows; the [generated Taskfile](template/Taskfile.yml.jinja) defines project workflows.
-
-## Maintaining the template
-
-Edit [template/](template/) to change generated projects. Set up and validate the template repository with:
-
-```bash
-task repo:install
-task quality:check
-```
-
-To release, run `task quality:check` on the commit you want to tag, then inspect existing tags:
-
-```bash
-git fetch origin --tags
-git tag --list 'v*' --sort=-version:refname
-```
-
-Choose the next version and replace `vX.Y.Z` below with it:
-
-```bash
-git tag vX.Y.Z
-git push origin vX.Y.Z
-```
-
-Pushing the tag starts the release validation workflow, which checks the tagged template
-locally and from GitHub. Validation runs after publication; a failed check leaves the tag available.
+- [Customizing the copy command](docs/runbook.md#customization)
+- [Creating projects from a local clone](docs/runbook.md#creating-projects-from-a-local-clone)
+- [Shared agent docs](docs/runbook.md#shared-agent-docs)
+- [Maintaining the template](docs/runbook.md#maintaining-the-template)
+- [Releasing](docs/runbook.md#releasing)
