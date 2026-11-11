@@ -46,9 +46,11 @@ sample_app = "sample_app.cli:main"
     )
     _write_text(root / "README.md", "# Sample App\n\nPackage: sample_app\n")
     _write_text(root / "AGENTS.md", "# Agents\n")
+    _write_text(root / "CLAUDE.md", "@AGENTS.md\n")
     _write_text(root / "CONTRIBUTING.md", "# Contributing\n")
     _write_text(root / "SECURITY.md", "# Security\n")
     _write_text(root / "docs" / "README.md", "# Documentation Index\n")
+    _write_text(root / "docs" / "delivery" / "README.md", "# Delivery\n")
     _write_text(root / "docs" / "evergreen" / "mvp.md", "# MVP\n")
     _write_text(root / "docs" / "evergreen" / "architecture.md", "# Architecture\n")
     _write_text(root / "docs" / "evergreen" / "api-contracts.md", "# API Contracts\n")
@@ -309,8 +311,8 @@ def test_render_uses_vcs_ref_when_present(tmp_path: Path) -> None:
     ]
 
 
-@pytest.mark.parametrize("name", ["Taskfile.yml"])
-def test_required_files_assertion_requires_taskfile(tmp_path: Path, name: str) -> None:
+@pytest.mark.parametrize("name", ["Taskfile.yml", "CLAUDE.md", "docs/delivery/README.md"])
+def test_required_files_assertion_requires_path(tmp_path: Path, name: str) -> None:
     repo = _make_rendered_repo(tmp_path)
     (repo.root / name).unlink()
     with pytest.raises(AssertionError, match="missing required path"):

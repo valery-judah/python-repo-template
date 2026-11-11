@@ -214,9 +214,11 @@ def _assert_destination_layout(repo: RenderedRepo) -> None:
 def _assert_required_files(repo: RenderedRepo) -> None:
     required_paths = (
         repo.root / "AGENTS.md",
+        repo.root / "CLAUDE.md",
         repo.root / "CONTRIBUTING.md",
         repo.root / "SECURITY.md",
         repo.root / "docs" / "README.md",
+        repo.root / "docs" / "delivery" / "README.md",
         repo.root / "docs" / "evergreen" / "mvp.md",
         repo.root / "docs" / "evergreen" / "architecture.md",
         repo.root / "docs" / "evergreen" / "api-contracts.md",
