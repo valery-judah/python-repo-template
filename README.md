@@ -55,30 +55,8 @@ On macOS or Linux, clone the shared Markdown repository into your home directory
 git clone https://github.com/valery-judah/agent-docs.git ~/agent-docs
 ```
 
-If `~/agent-docs` already exists, use the existing clone instead.
-In generated projects, `task repo:init` creates an `agent-docs` symlink to that directory.
-The link stays out of Git, and existing project entries are preserved.
-This shares the files across projects without installing them as skills.
-
-If you clone it after initializing a project, run this from the generated project directory:
-
-```bash
-task repo:agent-docs
-```
-
-You can also keep the clone elsewhere. For example:
-
-```bash
-git clone https://github.com/valery-judah/agent-docs.git ~/projects/agent-docs
-```
-
-Choose an existing parent directory. Then, from the generated project directory, create the link using the clone's path, provided no `agent-docs` entry exists:
-
-```bash
-ln -s ~/projects/agent-docs agent-docs
-```
-
-Later initialization preserves this link.
+In generated projects, `task repo:init` links it as `agent-docs`, kept out of Git.
+To link it later or keep the clone elsewhere, see [Shared agent docs](template/docs/evergreen/runbook.md#shared-agent-docs) in the generated runbook.
 
 ## Workflows
 

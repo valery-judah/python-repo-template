@@ -13,8 +13,7 @@ task quality:verify
 ```
 
 ## Adding dependencies
-- Runtime: `uv add <package>`
-- Dev: `uv add --dev <package>`
+See [Dependencies](docs/evergreen/runbook.md#dependencies) in the runbook.
 
 ## Pull requests
 - Keep changes small and focused.
