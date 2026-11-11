@@ -20,7 +20,7 @@ task quality:verify
 task app:run
 ```
 
-A Python starter with `uv`, Go Task, tests, and an [agent contract](template/AGENTS.md).
+A Python starter with `uv`, Go Task, tests, and an [agent contract](template/AGENTS.md.jinja).
 The command above uses the current GitHub branch tip. Omit `--vcs-ref HEAD` to use the latest release once it includes these changes.
 
 ## Prerequisites

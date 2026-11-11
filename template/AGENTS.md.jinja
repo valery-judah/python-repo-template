@@ -1,0 +1,20 @@
+# Agent Contract
+
+{{ repo_name }} is a Python project. The package is in `src/{{ package_name }}/`, with its CLI entry point in `src/{{ package_name }}/cli.py`.
+
+## Canonical sources
+- `README.md` - setup and running locally
+- `docs/evergreen/runbook.md` - command catalog and operation
+- `docs/README.md` - docs index: product scope, architecture, and API contracts
+
+`docs/evergreen/` is canonical. `docs/product/` holds product shaping (`spec.md`, `concepts.md`) until it is promoted to `docs/evergreen/`. `docs/delivery/` is reference-only.
+
+## Commands
+- Run workflows through `task`, otherwise `uv run <tool>`. Do not use `pip`, `python -m pip`, `poetry`, `pipenv`, `npm`, or `npx`.
+
+## Validation
+- Code change: `task quality:verify`.
+- Docs-only change: none. If it changes documented commands, run `task quality:verify`.
+
+## Scratch scripts
+- Put temporary, exploratory, and devex scripts in `scripts/devex/`.
