@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "{{ repo_slug }}"
 version = "0.1.0"
-description = "There should be description of your project."
+description = {{ description | tojson }}
 readme = "README.md"
 requires-python = ">={{ python_version }}"
 dependencies = [

@@ -24,22 +24,29 @@ task quality:test -- -k "smoke or cli"
 | `security:*` | Repository and staged secret scans |
 | `app:*` | Run and build the generated application |
 
-## Common commands
+## Commands
 
 ```bash
+task help
+task repo:init
+task repo:sync
+task repo:hooks
+task repo:agent-docs
+task repo:clean
 task quality:fmt
 task quality:fmt:check
 task quality:lint
 task quality:type
 task quality:test
 task quality:verify
+task quality:check
+task security:scan
+task security:scan:staged
 task app:run
 task app:build
-task repo:clean
-task repo:hooks
 ```
 
-`task quality:check` runs `task quality:verify`.
+`task quality:check` runs `task quality:verify`. `task repo:init` runs `repo:sync`, `repo:hooks`, and `repo:agent-docs`.
 
 ## Dependencies
 

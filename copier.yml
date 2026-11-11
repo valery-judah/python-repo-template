@@ -25,6 +25,15 @@ repo_name:
   help: Project display name
   default: "{{ repo_slug }}"
 
+description:
+  type: str
+  help: One sentence about what the project does
+  default: "TODO: describe what this project does in one sentence."
+  validator: >-
+    {% if not description.strip() %}
+    description is required
+    {% endif %}
+
 python_version:
   type: str
   help: Supported Python version

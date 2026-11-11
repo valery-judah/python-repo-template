@@ -215,6 +215,7 @@ def _assert_required_files(repo: RenderedRepo) -> None:
     required_paths = (
         repo.root / "AGENTS.md",
         repo.root / "CLAUDE.md",
+        repo.root / ".claude" / "settings.json",
         repo.root / "CONTRIBUTING.md",
         repo.root / "SECURITY.md",
         repo.root / "docs" / "README.md",

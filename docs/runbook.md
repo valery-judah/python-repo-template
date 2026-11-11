@@ -14,6 +14,7 @@ uvx copier copy --trust -l --vcs-ref HEAD gh:valery-judah/python-repo-template c
 ```
 
 - The destination folder supplies the project slug. Pass `-d repo_slug=another-name` to override it.
+- Pass `-d description="One sentence about the project."` to set the description used in `AGENTS.md`, the README, and `pyproject.toml`. The default is a TODO placeholder.
 - `-l` accepts defaults; omit it to answer prompts. See [copier.yml](../copier.yml) for all inputs and defaults.
 - `--trust` allows Copier to run template tasks, including Git initialization.
 - `--vcs-ref HEAD` uses the current GitHub branch tip. Omit it to use the latest release.

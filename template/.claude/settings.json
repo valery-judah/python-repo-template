@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(pip:*)",
+      "Bash(pip3:*)",
+      "Bash(python -m pip:*)",
+      "Bash(python3 -m pip:*)",
+      "Bash(poetry:*)",
+      "Bash(pipenv:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)"
+    ]
+  }
+}

@@ -47,6 +47,7 @@ sample_app = "sample_app.cli:main"
     _write_text(root / "README.md", "# Sample App\n\nPackage: sample_app\n")
     _write_text(root / "AGENTS.md", "# Agents\n")
     _write_text(root / "CLAUDE.md", "@AGENTS.md\n")
+    _write_text(root / ".claude" / "settings.json", "{}\n")
     _write_text(root / "CONTRIBUTING.md", "# Contributing\n")
     _write_text(root / "SECURITY.md", "# Security\n")
     _write_text(root / "docs" / "README.md", "# Documentation Index\n")
@@ -311,7 +312,9 @@ def test_render_uses_vcs_ref_when_present(tmp_path: Path) -> None:
     ]
 
 
-@pytest.mark.parametrize("name", ["Taskfile.yml", "CLAUDE.md", "docs/delivery/README.md"])
+@pytest.mark.parametrize(
+    "name", ["Taskfile.yml", "CLAUDE.md", ".claude/settings.json", "docs/delivery/README.md"]
+)
 def test_required_files_assertion_requires_path(tmp_path: Path, name: str) -> None:
     repo = _make_rendered_repo(tmp_path)
     (repo.root / name).unlink()
