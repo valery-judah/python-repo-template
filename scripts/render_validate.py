@@ -24,6 +24,7 @@ SNAPSHOT_EXCLUDES = (
     ".ruff_cache",
     ".mypy_cache",
     ".pyright",
+    "agent-docs",
 )
 
 

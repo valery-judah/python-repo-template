@@ -376,3 +376,19 @@ def test_init_artifacts_accepts_lockfile(tmp_path: Path) -> None:
     repo = _make_rendered_repo(tmp_path)
     _write_text(repo.root / "uv.lock", "version = 1\n")
     render_validate._assert_init_artifacts(repo)
+
+
+def test_create_source_snapshot_excludes_agent_docs_symlink(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    _write_text(repo_root / "copier.yml", "_subdirectory: template\n")
+    (repo_root / "agent-docs").symlink_to(tmp_path / "missing-shared-docs")
+
+    snapshot_root = render_validate._create_source_snapshot(
+        repo_root=repo_root,
+        base_dir=tmp_path / "out",
+    )
+
+    assert (snapshot_root / "copier.yml").is_file()
+    assert not (snapshot_root / "agent-docs").exists()
+    assert not (snapshot_root / "agent-docs").is_symlink()
