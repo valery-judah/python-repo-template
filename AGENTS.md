@@ -1,26 +1,20 @@
 # Agent Contract
 
+This repository is a Copier template for Python projects. `template/` is the generated project, `copier.yml` defines its inputs, and `scripts/render_validate.py` renders fixture projects to test it.
+
 ## Canonical sources
-- `docs/evergreen/mvp.md` - product scope
-- `docs/evergreen/architecture.md` - architecture and current repo shape
-- `docs/evergreen/api-contracts.md` - stable runtime interfaces
-- `docs/evergreen/runbook.md` - local commands and operation
-- `docs/README.md` - docs index
-
-`docs/evergreen/` is canonical. `docs/delivery/` is reference-only.
-
-For now, the `evergreen` directory is empty. We're working on the `docs/product/spec.md` and `docs/product/concepts.md` to build a product base.
+- `README.md` - creating a project, setting up this repository, and its workflows
+- `copier.yml` - template inputs and defaults
+- `template/AGENTS.md.jinja` - the agent contract for generated projects
 
 ## Commands
-- Use `task <namespace>:<name>` as the workflow entrypoint for this repo. Keep `uv` for Python environments, dependencies, and tool execution.
-- Use tasks defined in [`Taskfile.yml`](Taskfile.yml); otherwise use `uv run <tool>`.
-- Do not use `pip`, `python -m pip`, `poetry`, `pipenv`, `npm`, or `npx` for repo workflows.
-- For the full command catalog and operational guidance, use [`docs/evergreen/runbook.md`](docs/evergreen/runbook.md).
-- To inspect the current command surface directly, use `task` or `task help`.
+- Run workflows through `task`, otherwise `uv run <tool>`. Do not use `pip`, `python -m pip`, `poetry`, `pipenv`, `npm`, or `npx`.
 
 ## Validation
-- Docs-only change: no mandatory validation; run targeted checks only if docs affect commands or generated artifacts.
-- Code change: `task quality:verify`
+- Change under `scripts/` or `tests/`: `task quality:verify`.
+- Change under `template/`, or to `copier.yml` or `copier_extensions.py`: `task render:test`. It renders fixture projects and runs their checks.
+- Both of the above, or any other change: `task quality:check`.
+- Change to root `README.md` or `AGENTS.md` only: none.
 
-## Development Practices
-- Save any temporary, exploratory, or developer-experience (devex) scripts into the `scripts/devex/` directory.
+## Scratch scripts
+- Put temporary, exploratory, and devex scripts in `scripts/devex/`.
