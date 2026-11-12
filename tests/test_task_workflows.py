@@ -40,8 +40,10 @@ def _stub_tools(root: Path) -> dict[str, str]:
             "sys.exit(7 if os.environ.get('FAIL_COMMAND') in sys.argv[1:] else 0)\n"
         )
         path.chmod(0o755)
+    env = {k: v for k, v in os.environ.items() if k != "FORCE_COLOR"}
     return {
-        **os.environ,
+        **env,
+        "NO_COLOR": "1",
         "PATH": f"{bindir}:{os.environ['PATH']}",
         "COMMAND_LOG": str(root / "log"),
     }
