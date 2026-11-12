@@ -8,10 +8,17 @@ Python 3.11+, [uv](https://docs.astral.sh/uv/getting-started/installation/), and
 
 ## Create a project
 
-Replace `convert-pdf` with your repo name:
+Replace `convert-pdf` with your repo name.
+
+Create the project:
 
 ```bash
 uvx copier copy --trust -l --vcs-ref HEAD gh:valery-judah/python-repo-template convert-pdf
+```
+
+Set it up and run it:
+
+```bash
 cd convert-pdf
 task repo:init
 task quality:verify
