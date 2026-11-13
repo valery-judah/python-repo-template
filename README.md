@@ -25,7 +25,7 @@ task quality:verify
 task app:run
 ```
 
-The generated project's [README](template/README.md.jinja) and [runbook](template/docs/evergreen/runbook.md) cover its workflows.
+The generated project's [README](template/README.md.jinja) and [runbook](template/docs/evergreen/runbook.md) cover its workflows. Its [product framing](template/docs/product/framing.md) describes what the project is and why it exists.
 
 ## Main commands
 

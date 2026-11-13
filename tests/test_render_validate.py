@@ -56,7 +56,7 @@ sample_app = "sample_app.cli:main"
     _write_text(root / "docs" / "evergreen" / "architecture.md", "# Architecture\n")
     _write_text(root / "docs" / "evergreen" / "api-contracts.md", "# API Contracts\n")
     _write_text(root / "docs" / "evergreen" / "runbook.md", "# Runbook\n")
-    _write_text(root / "docs" / "product" / "spec.md", "# Product Spec\n")
+    _write_text(root / "docs" / "product" / "framing.md", "# Product Framing\n")
     _write_text(root / "docs" / "product" / "concepts.md", "# Product Concepts\n")
     _write_text(root / ".githooks" / "pre-commit", "#!/bin/sh\n")
     _write_text(

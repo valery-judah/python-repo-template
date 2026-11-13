@@ -224,7 +224,7 @@ def _assert_required_files(repo: RenderedRepo) -> None:
         repo.root / "docs" / "evergreen" / "architecture.md",
         repo.root / "docs" / "evergreen" / "api-contracts.md",
         repo.root / "docs" / "evergreen" / "runbook.md",
-        repo.root / "docs" / "product" / "spec.md",
+        repo.root / "docs" / "product" / "framing.md",
         repo.root / "docs" / "product" / "concepts.md",
         repo.root / ".githooks" / "pre-commit",
         repo.root / "Taskfile.yml",

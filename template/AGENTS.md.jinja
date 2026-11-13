@@ -5,9 +5,20 @@
 The Python package is in `src/{{ package_name }}/`.
 
 ## Canonical sources
+
+### Repository and infrastructure
 - `README.md` - setup and running locally
-- `docs/evergreen/runbook.md` - full command reference
 - `docs/README.md` - docs index
+- `docs/evergreen/runbook.md` - full command reference
+- `agent-docs/` - conventions shared across projects, when present. Git ignores it, so search it by path, such as `rg <pattern> agent-docs/`.
+- `tasks/<id>/` - context for the current task, when present. Read `plan.md` first and keep it up to date.
+
+### Product and architecture
+- `docs/product/framing.md` - what the product is, who it is for, and why. Read it before changing product behavior.
+- `docs/product/concepts.md` - exploratory concepts and mental models
+- `docs/evergreen/mvp.md` - stable product scope
+- `docs/evergreen/architecture.md` - module boundaries and repository shape
+- `docs/evergreen/api-contracts.md` - runtime interfaces and compatibility guarantees
 
 `docs/evergreen/` is canonical and wins when sources disagree. `docs/product/` holds product work in progress until it is promoted to `docs/evergreen/`. `docs/delivery/` is reference-only.
 

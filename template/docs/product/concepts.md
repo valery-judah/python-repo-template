@@ -1,3 +1,3 @@
 # Product Concepts
 
-Capture exploratory concepts, mental models, and framing that inform the product spec.
+Capture exploratory concepts and mental models. Move the ones that hold up into `framing.md`.
